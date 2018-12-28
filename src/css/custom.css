@@ -1,0 +1,36 @@
+
+.logo-container {
+  padding-top: 1em;
+}
+
+.center-text {
+  text-align: center;
+}
+
+.logo-container > * {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+  margin-bottom: 1em;
+}
+
+.slogan {
+  margin-top: 1.5em;
+}
+
+.cta {
+  display: flex;
+  justify-content: space-evenly;
+  padding: 0 10%;
+}
+
+.custom-form {
+  width: 50%;
+  margin-top: 2.5em;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.custom-form > * {
+  width: 100%;
+}
