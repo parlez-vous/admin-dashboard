@@ -1,29 +1,12 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (
-  Html,
-  button,
-  div,
-  text,
-  pre,
-  form,
-  label,
-  input,
-  img,
-  h1,
-  p)
+import Html exposing (..)
 import Html.Events exposing (onClick, onInput, onSubmit)
-import Html.Attributes exposing (
-  id,
-  class,
-  value,
-  disabled,
-  for,
-  src,
-  placeholder,
-  type_)
-  
+import Html.Attributes exposing (..)
+import Http
+import Json.Decode as D
+import Json.Encode as E
 import List
 
 
@@ -64,6 +47,7 @@ type Msg
   | DisplaySignup
   | Form FormMsg
   | SubmitForm
+  | SubmittedForm (Result Http.Error ())
 
 
 
@@ -80,20 +64,20 @@ type alias Signin =
   , password : String
   }
 
-
 type Form
   = SignupForm Signup
   | SigninForm Signin
-  | Hidden
 
-
-type alias Model = Form
+type Model
+  = ShowForm Form
+  | FormHidden
+  | FormSubmitting
 
 
 -- type alias Model = Int
 
 init : () -> (Model, Cmd msg)
-init _ = (Hidden, Cmd.none)
+init _ = (FormHidden, Cmd.none)
 
 
 -- UPDATE
@@ -102,9 +86,6 @@ init _ = (Hidden, Cmd.none)
 updateFormField : Form -> FormMsg -> Form
 updateFormField currentForm msg =
   case currentForm of
-    
-    Hidden -> currentForm
-
     SignupForm data ->
       case msg of
         EmailInput s ->
@@ -128,9 +109,48 @@ updateFormField currentForm msg =
           SigninForm { data | password = s }
 
 
-
         _ ->
           currentForm
+
+
+signupJson : Signup -> E.Value
+signupJson data =
+  E.object
+    [ ( "email", E.string data.email )
+    , ( "website", E.string data.website )
+    , ( "password", E.string data.password )
+    , ( "passwordConfirm", E.string data.passwordConfirm )
+    ]
+
+
+signinJson : Signin -> E.Value
+signinJson data =
+  E.object
+    [ ( "email", E.string data.email )
+    , ( "password", E.string data.password )
+    ]
+
+
+handleSubmitForm : Form -> Cmd Msg
+handleSubmitForm form =
+  let
+    api = "https://staging.api.parlez-vous.io"
+
+  in
+    case form of 
+      SignupForm data ->
+        Http.post
+            { url = api ++ "/signup"
+            , body = Http.jsonBody <| signupJson data
+            , expect = Http.expectWhatever SubmittedForm
+            }
+
+      SigninForm data ->
+        Http.post
+          { url = api ++ "/signin"
+          , body = Http.jsonBody <| signinJson data
+          , expect = Http.expectWhatever SubmittedForm
+          }
 
 
 
@@ -140,24 +160,51 @@ update msg model =
     DisplayLogin ->
       let emptyForm = SigninForm <| Signin "" ""
       in
-        (emptyForm, Cmd.none)
+        (ShowForm emptyForm, Cmd.none)
 
     DisplaySignup ->
       let emptyForm = SignupForm <| Signup "" "" "" ""
       in
-        (emptyForm, Cmd.none)
+        (ShowForm emptyForm, Cmd.none)
 
 
     Form formMsg ->
       let
-        updatedModel = updateFormField model formMsg
+        updatedModel =
+          case model of
+            ShowForm form ->
+              ShowForm <| updateFormField form formMsg
+          
+            -- this seems like a code smell
+            -- this state should never occur
+            _ -> model
 
       in
         (updatedModel, Cmd.none)
 
     SubmitForm ->
-      (Debug.log "submitting" model, Cmd.none)
+      let httpCmd =
+            case model of
+              ShowForm form ->
+                handleSubmitForm form
+              
+              -- this seems like a code smell
+              -- this state should never occur
+              _ -> Cmd.none
 
+      in
+        ( FormSubmitting
+        , httpCmd
+        )
+
+
+    SubmittedForm result ->
+      case result of
+        Ok _ ->
+          (Debug.log "success!" model, Cmd.none)
+
+        Err _ ->
+          (Debug.log "failure!" model, Cmd.none)
 
 
 
@@ -176,16 +223,18 @@ view model =
   }
 
 body : Model -> Html Msg
-body model = 
-  div [ class "container" ]
-    [ div [ class "row" ]
-        [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
-        , pre [ class "center-text" ] [ text "work in progress" ]
-        , div [ class "logo-container" ] [ logo ]
-        , p [ class "center-text" ] [ text "The fastest way to engage your audience" ]
-        , cta
-        , form_ model
-        ]
+body model =
+  div [] 
+    [ cta
+    , div [ class "container" ]
+      [ div [ class "row" ]
+          [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
+          , pre [ class "center-text" ] [ text "work in progress" ]
+          , div [ class "logo-container" ] [ logo ]
+          , p [ class "center-text" ] [ text "The fastest way to engage your audience" ]
+          , form_ model
+          ]
+      ]
     ]
 
 cta : Html Msg
@@ -216,17 +265,20 @@ form_ model =
   let
     readyToSubmit =
       case model of
-        Hidden -> False
+        ShowForm form ->
+          case form of
+            SignupForm data -> 
+              String.length data.email > 3 &&
+              String.length data.website > 11 &&
+              String.left 8 data.website == "https://" &&
+              String.length data.password > 6 &&
+              data.password == data.passwordConfirm
 
-        SignupForm data -> 
-          String.length data.email > 3 &&
-          String.length data.website > 5 &&
-          String.length data.password > 6 &&
-          data.password == data.passwordConfirm
+            SigninForm data ->
+              String.length data.email > 3 &&
+              String.length data.password > 6
 
-        SigninForm data ->
-          String.length data.email > 3 &&
-          String.length data.password > 6
+        _ -> False
 
     submitBtn =
       if readyToSubmit
@@ -243,21 +295,35 @@ form_ model =
 
     formContent =
       case model of
-        Hidden -> []
+        FormHidden -> []
 
-        SignupForm data ->
-          List.append (baseForm data)
-            [ label [ for "password-confirm-input" ] [ text "confirm password" ]
-            , input [ id "password-confirm-input", type_ "password", onInput (Form << PasswordConfirm) ] [] 
+        FormSubmitting -> [ div [ class "center-text" ] [ text "submitting ..." ] ]
 
-            , label [ for "website-input" ] [ text "your website" ]
-            , input [ id "website-input", type_ "text", onInput (Form << WebsiteInput) ] [] 
+        ShowForm form ->
+          case form of
+            SignupForm data ->
+              List.append (baseForm data)
+                [ label [ for "password-confirm-input" ] [ text "confirm password" ]
+                , input [ id "password-confirm-input", type_ "password", onInput (Form << PasswordConfirm) ] [] 
 
-            , submitBtn
-            ]
+                , label [ for "website-input" ] [ text "your website" ]
+                , div [ class "url-info" ] 
+                    [ span [] [ text "must start with " ] 
+                    , pre [] [ text "https://" ]
+                    ]
+                , input
+                    [ id "website-input"
+                    , type_ "url"
+                    , pattern "https://.*"
+                    , onInput (Form << WebsiteInput)
+                    ]
+                    []
 
-        SigninForm data ->
-          List.append (baseForm data) [ submitBtn ]
+                , submitBtn
+                ]
+
+            SigninForm data ->
+              List.append (baseForm data) [ submitBtn ]
           
   in
-    form [ class "custom-form", onSubmit SubmitForm ] formContent
+    Html.form [ class "custom-form", onSubmit SubmitForm ] formContent
