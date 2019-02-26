@@ -36,10 +36,9 @@ subscriptions model = Sub.none
 -- MODEL
 
 type FormMsg
-  = EmailInput String
+  = UsernameInput String
   | PasswordInput String
   | PasswordConfirm String
-  | WebsiteInput String
 
 
 type Msg
@@ -52,15 +51,14 @@ type Msg
 
 
 type alias Signup = 
-  { email           : String
-  , website         : String
+  { username           : String
   , password        : String
   , passwordConfirm : String
   }
 
 
 type alias Signin =
-  { email    : String
+  { username    : String
   , password : String
   }
 
@@ -88,8 +86,8 @@ updateFormField currentForm msg =
   case currentForm of
     SignupForm data ->
       case msg of
-        EmailInput s ->
-          SignupForm { data | email = s }
+        UsernameInput s ->
+          SignupForm { data | username = s }
 
         PasswordInput s ->
           SignupForm { data | password = s }
@@ -97,13 +95,10 @@ updateFormField currentForm msg =
         PasswordConfirm s ->
           SignupForm { data | passwordConfirm = s }
 
-        WebsiteInput s ->
-          SignupForm { data | website = s }
-
     SigninForm data ->
       case msg of
-        EmailInput s ->
-          SigninForm { data | email = s }
+        UsernameInput s ->
+          SigninForm { data | username = s }
 
         PasswordInput s ->
           SigninForm { data | password = s }
@@ -116,8 +111,7 @@ updateFormField currentForm msg =
 signupJson : Signup -> E.Value
 signupJson data =
   E.object
-    [ ( "email", E.string data.email )
-    , ( "website", E.string data.website )
+    [ ( "username", E.string data.username )
     , ( "password", E.string data.password )
     , ( "passwordConfirm", E.string data.passwordConfirm )
     ]
@@ -126,7 +120,7 @@ signupJson data =
 signinJson : Signin -> E.Value
 signinJson data =
   E.object
-    [ ( "email", E.string data.email )
+    [ ( "username", E.string data.username )
     , ( "password", E.string data.password )
     ]
 
@@ -134,7 +128,7 @@ signinJson data =
 handleSubmitForm : Form -> Cmd Msg
 handleSubmitForm form =
   let
-    api = "https://staging.api.parlez-vous.io"
+    api = "http://staging.api.parlez-vous.io/admins"
 
   in
     case form of 
@@ -163,7 +157,7 @@ update msg model =
         (ShowForm emptyForm, Cmd.none)
 
     DisplaySignup ->
-      let emptyForm = SignupForm <| Signup "" "" "" ""
+      let emptyForm = SignupForm <| Signup "" "" ""
       in
         (ShowForm emptyForm, Cmd.none)
 
@@ -246,19 +240,19 @@ cta =
     ]
 
 
-inputWithLabel : String -> String -> String -> (String -> FormMsg) -> List (Html Msg)
-inputWithLabel identifier t v m =
-  [ label [ for identifier ] [ text t ]
+inputWithLabel : String -> String -> String -> String -> (String -> FormMsg) -> List (Html Msg)
+inputWithLabel identifier t l v m =
+  [ label [ for identifier ] [ text l ]
   , input [ id identifier, type_ t, onInput (Form << m), value v] []
   ]
 
-emailInput : String -> String -> (String -> FormMsg) -> List (Html Msg)
-emailInput identifier val msg =
-  inputWithLabel identifier "email" val msg
+usernameInput : String -> String -> (String -> FormMsg) -> List (Html Msg)
+usernameInput identifier val msg =
+  inputWithLabel identifier "text" "username" val msg
 
 pswdInput : String -> String -> (String -> FormMsg) -> List (Html Msg)
 pswdInput identifier val msg =
-  inputWithLabel identifier "password" val msg
+  inputWithLabel identifier "password" "password" val msg
 
 form_ : Model -> Html Msg
 form_ model =
@@ -268,14 +262,12 @@ form_ model =
         ShowForm form ->
           case form of
             SignupForm data -> 
-              String.length data.email > 3 &&
-              String.length data.website > 11 &&
-              String.left 8 data.website == "https://" &&
+              String.length data.username > 3 &&
               String.length data.password > 6 &&
               data.password == data.passwordConfirm
 
             SigninForm data ->
-              String.length data.email > 3 &&
+              String.length data.username > 3 &&
               String.length data.password > 6
 
         _ -> False
@@ -288,9 +280,9 @@ form_ model =
         div [] []
       
 
-    baseForm { email, password } =
+    baseForm { username, password } =
       List.append
-        (emailInput "email-input" email EmailInput)
+        (usernameInput "username-input" username UsernameInput)
         (pswdInput "password-input" password PasswordInput)
 
     formContent =
@@ -305,20 +297,6 @@ form_ model =
               List.append (baseForm data)
                 [ label [ for "password-confirm-input" ] [ text "confirm password" ]
                 , input [ id "password-confirm-input", type_ "password", onInput (Form << PasswordConfirm) ] [] 
-
-                , label [ for "website-input" ] [ text "your website" ]
-                , div [ class "url-info" ] 
-                    [ span [] [ text "must start with " ] 
-                    , pre [] [ text "https://" ]
-                    ]
-                , input
-                    [ id "website-input"
-                    , type_ "url"
-                    , pattern "https://.*"
-                    , onInput (Form << WebsiteInput)
-                    ]
-                    []
-
                 , submitBtn
                 ]
 
