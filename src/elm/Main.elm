@@ -10,6 +10,7 @@ import Url
 import List
 
 
+import Routes.Admin as Admin
 import Routes.Home as Home
 import Routes.Router as Router
 
@@ -21,12 +22,14 @@ type alias Model =
 
 type Route
   = Home Home.Model
+  | Admin Admin.Model
   | NotFound
 
 
 
 type Msg
   = HomeMsg Home.Msg
+  | AdminMsg Admin.Msg
   | UrlChanged Url.Url
   | LinkClicked Browser.UrlRequest
 
@@ -70,8 +73,8 @@ init flags url key =
 
 
 
-createReducer : Nav.Key -> (m -> Route) -> (msg -> Msg) -> ((m, Cmd msg) -> (Model, Cmd Msg))
-createReducer key toRoute toMsg =
+createUpdater : Nav.Key -> (m -> Route) -> (msg -> Msg) -> ((m, Cmd msg) -> (Model, Cmd Msg))
+createUpdater key toRoute toMsg =
   let
     toModel = (\m -> Model key (toRoute m))
 
@@ -83,15 +86,17 @@ createReducer key toRoute toMsg =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   let
-    reducer = createReducer model.key
+    updater = createUpdater model.key
   
   in
     case msg of
       HomeMsg homeMsg ->
         case model.route of
-          Home formModel -> reducer Home HomeMsg <| Home.update homeMsg formModel
+          Home formModel -> updater Home HomeMsg <| Home.update homeMsg formModel
 
           _ -> (model, Cmd.none)
+
+      AdminMsg adminMsg -> (Debug.log "adminmsg!" model, Cmd.none)
 
       UrlChanged _ ->
         (Debug.log "url changed" model, Cmd.none)
@@ -118,3 +123,5 @@ view model =
       }
 
     Home homeModel -> Router.view HomeMsg (Home.view homeModel)
+
+    Admin adminModel -> Router.view AdminMsg (Admin.view adminModel)
