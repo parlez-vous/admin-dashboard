@@ -7,6 +7,7 @@ import Html.Events exposing (onClick, onInput, onSubmit)
 import Html.Attributes exposing (..)
 import Http
 import Url
+import Url.Parser as Parser exposing (Parser, map, oneOf, s, top)
 import List
 
 
@@ -21,7 +22,7 @@ type alias Model =
   }
 
 type Route
-  = Home Home.Model
+  = HomeRoute Home.Model
   | Admin Admin.Model
   | NotFound
 
@@ -62,15 +63,49 @@ init : () -> Url.Url -> Nav.Key -> (Model, Cmd msg)
 init flags url key =
   let
     -- placeholder for now
-    getRoute = Home Home.FormHidden
+    initialRoute = HomeRoute <| Home.Model key Home.FormHidden
 
   in
-    (Model key getRoute, Cmd.none)
+    (Model key initialRoute, Cmd.none)
+
+
+
+-- ROUTER
+
+getRoute : Url.Url -> Model -> (Model, Cmd Msg)
+getRoute url model =
+  let
+    parser =
+      oneOf
+        [ route top
+            ( Model model.key (HomeRoute <| Home.Model model.key Home.FormHidden)
+            )
+        , route (s "admin")
+            ( Model model.key (Admin Admin.Hello ))
+        ]
+
+  in
+  case Parser.parse parser url of
+    Just answer ->
+      (answer, Cmd.none)
+
+    Nothing ->
+      ( { model | route = NotFound }
+      , Cmd.none
+      )
+
+
+
+route : Parser a b -> a -> Parser (b -> c) c
+route parser handler =
+  Parser.map handler parser
+
+
+
+
 
 
 -- UPDATE
-
-
 
 
 createUpdater : Nav.Key -> (m -> Route) -> (msg -> Msg) -> ((m, Cmd msg) -> (Model, Cmd Msg))
@@ -87,19 +122,18 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   let
     updater = createUpdater model.key
-  
+
   in
     case msg of
       HomeMsg homeMsg ->
         case model.route of
-          Home formModel -> updater Home HomeMsg <| Home.update homeMsg formModel
+          HomeRoute formModel -> updater HomeRoute HomeMsg <| Home.update homeMsg formModel
 
           _ -> (model, Cmd.none)
 
       AdminMsg adminMsg -> (Debug.log "adminmsg!" model, Cmd.none)
 
-      UrlChanged _ ->
-        (Debug.log "url changed" model, Cmd.none)
+      UrlChanged url -> getRoute url model
 
       LinkClicked _ ->
         (Debug.log "link clicked" model, Cmd.none)
@@ -122,6 +156,6 @@ view model =
       , body = [ div [] [ text "404 not found" ] ]
       }
 
-    Home homeModel -> Router.view HomeMsg (Home.view homeModel)
+    HomeRoute homeModel -> Router.view HomeMsg (Home.view homeModel)
 
     Admin adminModel -> Router.view AdminMsg (Admin.view adminModel)

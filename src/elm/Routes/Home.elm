@@ -1,6 +1,7 @@
 module Routes.Home exposing
-  ( Model(..)
+  ( Model
   , FormType(..)
+  , FormState(..)
   , Signin
   , Signup
   , Msg
@@ -8,6 +9,7 @@ module Routes.Home exposing
   , view
   )
 
+import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Html.Attributes exposing (..)
@@ -35,10 +37,15 @@ type FormType
   = SignupForm Signup
   | SigninForm Signin
 
-type Model
+type FormState
   = ShowForm FormType
   | FormHidden
   | FormSubmitting
+
+type alias Model =
+  { key: Nav.Key
+  , form: FormState
+  }
 
 
 
@@ -135,55 +142,63 @@ signinJson data =
     , ( "password", E.string data.password )
     ]
 
+updateForm : Model -> FormState -> Model
+updateForm currentModel nextState =
+  { currentModel | form = nextState }
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  case msg of
-    DisplayLogin ->
-        let emptyForm = SigninForm <| Signin "" ""
+  let
+    formUpdate = updateForm model
+  
+  in
+    case msg of
+      DisplayLogin ->
+          let emptyForm = SigninForm <| Signin "" ""
+          in
+            (formUpdate <| ShowForm emptyForm, Cmd.none)
+
+      DisplaySignup ->
+        let emptyForm = SignupForm <| Signup "" "" ""
         in
-          (ShowForm emptyForm, Cmd.none)
-
-    DisplaySignup ->
-      let emptyForm = SignupForm <| Signup "" "" ""
-      in
-        (ShowForm emptyForm, Cmd.none)
+          (formUpdate <| ShowForm emptyForm, Cmd.none)
 
 
-    Form formMsg ->
-      let
-        updatedModel =
-          case model of
-            ShowForm form ->
-              ShowForm <| updateFormField form formMsg
-          
-            -- this seems like a code smell
-            -- this state should never occur
-            _ -> model
-
-      in
-        (updatedModel, Cmd.none)
-
-    SubmitForm ->
-      let httpCmd =
-            case model of
+      Form formMsg ->
+        let
+          updatedForm =
+            case model.form of
               ShowForm form ->
-                handleSubmitForm form
-              
+                ShowForm <| updateFormField form formMsg
+            
               -- this seems like a code smell
               -- this state should never occur
-              _ -> Cmd.none
+              _ -> model.form
 
-      in
-        ( FormSubmitting, httpCmd )
+        in
+          (formUpdate updatedForm, Cmd.none)
+
+      SubmitForm ->
+        let httpCmd =
+              case model.form of
+                ShowForm form ->
+                  handleSubmitForm form
+                
+                -- this seems like a code smell
+                -- this state should never occur
+                _ -> Cmd.none
+
+        in
+          ( formUpdate FormSubmitting, httpCmd )
 
 
-    SubmittedForm result ->
-      case result of
-        Ok _ ->
-          (Debug.log "success!" model, Cmd.none)
+      SubmittedForm result ->
+        case result of
+          Ok _ ->
+            (Debug.log "success!" model, Nav.pushUrl model.key "/admin")
 
-        Err _ ->
-          (Debug.log "failure!" model, Cmd.none)
+          Err _ ->
+            (Debug.log "failure!" model, Cmd.none)
 
 
 
@@ -221,7 +236,7 @@ form_ : Model -> Html Msg
 form_ model =
   let
     readyToSubmit =
-      case model of
+      case model.form of
         ShowForm form ->
           case form of
             SignupForm data -> 
@@ -249,7 +264,7 @@ form_ model =
         (pswdInput "password-input" password PasswordInput)
 
     formContent =
-      case model of
+      case model.form of
         FormHidden -> []
 
         FormSubmitting -> [ div [ class "center-text" ] [ text "submitting ..." ] ]
