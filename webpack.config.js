@@ -54,5 +54,6 @@ module.exports = {
   devServer: {
     inline: true,
     stats: { colors: true },
+    historyApiFallback: true
   },
 };
