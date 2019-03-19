@@ -1,16 +1,20 @@
-module Routes.Admin exposing ( .. )
+module Routes.Admin exposing
+  ( Msg
+  , update
+  , view
+  )
 
 import Html exposing (..)
 
 import Routes.Router as Router
+import Session
 
-type Model = Hello
+type alias Model = Session.User
 
-type Msg
-  = SayHello
+type Msg = NoOp
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model = ( Hello, Cmd.none )
+update msg model = ( model, Cmd.none )
 
 
 view : Model -> Router.Details Msg

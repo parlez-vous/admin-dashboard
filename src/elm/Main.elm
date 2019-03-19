@@ -1,4 +1,4 @@
-module Main exposing (main, Msg)
+module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
@@ -14,6 +14,7 @@ import List
 import Routes.Admin as Admin
 import Routes.Home as Home
 import Routes.Router as Router
+import Session
 
 
 type alias Model =
@@ -23,7 +24,7 @@ type alias Model =
 
 type Route
   = HomeRoute Home.Model
-  | Admin Admin.Model
+  | Admin Session.User
   | NotFound
 
 
@@ -60,10 +61,16 @@ subscriptions model = Sub.none
 -- type alias Model = Int
 
 init : () -> Url.Url -> Nav.Key -> (Model, Cmd msg)
-init flags url key =
+init _ url key =
   let
     -- placeholder for now
-    initialRoute = HomeRoute <| Home.Model key Home.FormHidden
+    initialRoute = 
+      case Router.fromUrl url of
+        Just Router.Home -> HomeRoute <| Home.init key
+
+        Just Router.Admin -> Admin Session.Guest
+
+        Nothing -> NotFound
 
   in
     (Model key initialRoute, Cmd.none)
@@ -81,7 +88,7 @@ getRoute url model =
             ( Model model.key (HomeRoute <| Home.Model model.key Home.FormHidden)
             )
         , route (s "admin")
-            ( Model model.key (Admin Admin.Hello ))
+            ( Model model.key (Admin Session.Guest ))
         ]
 
   in
