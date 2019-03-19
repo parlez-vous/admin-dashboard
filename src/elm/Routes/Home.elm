@@ -2,9 +2,8 @@ module Routes.Home exposing
   ( Model
   , FormType(..)
   , FormState(..)
-  , Signin
-  , Signup
   , Msg
+  , init
   , update
   , view
   )
@@ -14,28 +13,21 @@ import Html exposing (..)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Html.Attributes exposing (..)
 import Http
-import Json.Decode as D
-import Json.Encode as E
 
+
+import Api
+import Api.Output as Output
+import Api.Deserialize as Input
+import Either exposing (Either(..))
 import Logo exposing (logo)
 import Routes.Router as Router
 
 -- MODEL
 
-type alias Signup = 
-  { username        : String
-  , password        : String
-  , passwordConfirm : String
-  }
-
-type alias Signin =
-  { username : String
-  , password : String
-  }
 
 type FormType
-  = SignupForm Signup
-  | SigninForm Signin
+  = SignupForm Output.Signup
+  | SigninForm Output.Signin
 
 type FormState
   = ShowForm FormType
@@ -60,17 +52,16 @@ type FormMsg
   | PasswordConfirm String
 
 
-
 type Msg
   = DisplayLogin
   | DisplaySignup
   | Form FormMsg
   | SubmitForm
-  | SubmittedForm (Result Http.Error ())
+  | SubmittedForm (Result Http.Error Input.Admin)
 
 
-
-
+init : Nav.Key -> Model
+init key = Model key FormHidden
 
 -- UPDATE
 
@@ -104,43 +95,13 @@ updateFormField currentForm msg =
 
 handleSubmitForm : FormType -> Cmd Msg
 handleSubmitForm form =
-  let
-    api = "http://staging.api.parlez-vous.io/admins"
+  case form of 
+    SignupForm data ->
+      Api.adminSignup SubmittedForm data
 
-  in
-    case form of 
-      SignupForm data ->
-        Http.post
-            { url = api ++ "/signup"
-            , body = Http.jsonBody <| signupJson data
-            , expect = Http.expectWhatever SubmittedForm
-            }
+    SigninForm data ->
+      Api.adminSignin SubmittedForm data
 
-      SigninForm data ->
-        Http.post
-          { url = api ++ "/signin"
-          , body = Http.jsonBody <| signinJson data
-          , expect = Http.expectWhatever SubmittedForm
-          }
-
-
-
-
-signupJson : Signup -> E.Value
-signupJson data =
-  E.object
-    [ ( "username", E.string data.username )
-    , ( "password", E.string data.password )
-    , ( "passwordConfirm", E.string data.passwordConfirm )
-    ]
-
-
-signinJson : Signin -> E.Value
-signinJson data =
-  E.object
-    [ ( "username", E.string data.username )
-    , ( "password", E.string data.password )
-    ]
 
 updateForm : Model -> FormState -> Model
 updateForm currentModel nextState =
@@ -154,12 +115,12 @@ update msg model =
   in
     case msg of
       DisplayLogin ->
-          let emptyForm = SigninForm <| Signin "" ""
+          let emptyForm = SigninForm <| Output.Signin "" ""
           in
             (formUpdate <| ShowForm emptyForm, Cmd.none)
 
       DisplaySignup ->
-        let emptyForm = SignupForm <| Signup "" "" ""
+        let emptyForm = SignupForm <| Output.Signup "" "" ""
         in
           (formUpdate <| ShowForm emptyForm, Cmd.none)
 
@@ -284,24 +245,6 @@ form_ model =
   in
     Html.form [ class "custom-form", onSubmit SubmitForm ] formContent
 
-
-{-
-
-view : Model -> Html msg
-view model =
-  div [] 
-    [ cta
-    , div [ class "container" ]
-      [ div [ class "row" ]
-          [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
-          , pre [ class "center-text" ] [ text "work in progress" ]
-          , div [ class "logo-container" ] [ logo ]
-          , p [ class "center-text" ] [ text "The fastest way to engage your audience" ]
-          , form_ model
-          ]
-      ]
-    ]
--}
 
 view : Model -> Router.Details Msg
 view model =
