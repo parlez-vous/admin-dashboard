@@ -19,8 +19,8 @@ adminDecoder : Decoder Admin
 adminDecoder =
   D.field "data"
     (D.map4 Admin
-      (D.at ["data", "id"] D.int)
-      (D.at ["data", "username"] D.string)
-      (D.at ["data", "created_at"] Iso8601.decoder)
-      (D.at ["data", "updated_at"] Iso8601.decoder))
+      (D.field "id" D.int)
+      (D.field "username" D.string)
+      (D.field "created_at" Iso8601.decoder)
+      (D.field "updated_at" Iso8601.decoder))
 
