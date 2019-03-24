@@ -3,17 +3,15 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
-import Html.Events exposing (onClick, onInput, onSubmit)
 import Html.Attributes exposing (..)
 import Http
 import Url
-import Url.Parser as Parser exposing (Parser, map, oneOf, s, top)
 import List
 
 
 import Api
 import Api.Deserialize as Input
-import SharedState exposing (SharedState)
+import SharedState exposing (SharedState, updateSession)
 import Routes.Admin as Admin
 import Routes.Home as Home
 import Routes.Router as Router
@@ -27,12 +25,7 @@ type alias Model =
 
 type AppState
   = Ready SharedState Router.Model
-  | NotReady
-
-type Route
-  = HomeRoute Home.Model
-  | Admin Session.User
-  | NotFound
+  | NotReady Nav.Key
 
 
 
@@ -68,7 +61,7 @@ subscriptions model = Sub.none
 
 init : () -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
 init _ url key =
-    ( { state = NotReady
+    ( { state = NotReady key
       , url   = url
       }
     , Api.getAdminSession SessionVerified
@@ -83,15 +76,83 @@ init _ url key =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  case msg of
-    RouterMsg routerMsg -> ( model, Cmd.none )
+  let
+    _ = Debug.log "UPDATE" msg
     
-    UrlChanged url -> ( model, Cmd.none )
+  in
+  case msg of
+    RouterMsg routerMsg ->
+      updateRouter routerMsg model
+    
+    UrlChanged url ->
+      updateRouter (Router.UrlChange url) { model | url = url }
 
     LinkClicked _ ->
       (Debug.log "link clicked" model, Cmd.none)
 
-    SessionVerified _ -> ( model, Cmd.none )
+    SessionVerified result ->
+      case result of
+        Ok admin ->
+          case model.state of
+            Ready sharedState routerModel ->
+              ( { model
+                  | state = Ready (SharedState.updateSession (Session.Admin admin) sharedState) routerModel
+                }
+              , Cmd.none
+              )
+
+            NotReady key ->
+              ( { model
+                  | state = Ready (SharedState.init key <| Session.Admin admin) (Router.init model.url)
+                }
+              , Cmd.none
+              )
+
+        Err e ->
+          let
+            _ = (Debug.log "Error while verifying session" e)
+
+          in
+            case model.state of
+              Ready sharedState routerModel ->
+                ( { model
+                    | state = Ready (SharedState.updateSession Session.Guest sharedState) routerModel
+                  }
+                , Cmd.none
+                )
+
+              NotReady key ->
+                ( { model
+                    | state = Ready (SharedState.init key Session.Guest) (Router.init model.url)
+                  }
+                , Cmd.none
+                )
+
+
+
+updateRouter : Router.Msg -> Model -> ( Model, Cmd Msg )
+updateRouter routerMsg model =
+    case model.state of
+        Ready sharedState routerModel ->
+            let
+                ( nextRouterModel, routerCmd, sharedStateUpdate ) =
+                    Router.update sharedState routerMsg routerModel
+
+                nextSharedState =
+                    SharedState.update sharedStateUpdate sharedState
+
+            in
+            ( { model | state = Ready nextSharedState nextRouterModel }
+            , Cmd.map RouterMsg routerCmd
+            )
+
+        _ ->
+            let
+                _ =
+                    Debug.log "We got a router message even though the app is not ready?"
+                        routerMsg
+            in
+            ( model, Cmd.none )
 
 
 
@@ -100,11 +161,14 @@ update msg model =
 view : Model -> Browser.Document Msg
 view model =
   case model.state of
-    NotReady ->
+    NotReady _ ->
       { title = "Loading"
       , body = [ div [] [ text "Loading ..." ] ]
       }
 
     Ready sharedState routeModel ->
+      let
+        _ = Debug.log "SHARED STATE" sharedState
+      in  
       Router.view RouterMsg sharedState routeModel
 

@@ -18,9 +18,9 @@ import Http
 import Api
 import Api.Output as Output
 import Api.Deserialize as Input
-import Either exposing (Either(..))
 import Logo exposing (logo)
-import SharedState exposing (SharedState)
+import Session
+import SharedState exposing (SharedState, SharedStateUpdate)
 
 
 
@@ -108,7 +108,7 @@ updateForm : Model -> FormState -> Model
 updateForm currentModel nextState =
   { currentModel | form = nextState }
 
-update : SharedState -> Msg -> Model -> ( Model, Cmd Msg )
+update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update sharedState msg model =
   let
     formUpdate = updateForm model
@@ -118,12 +118,18 @@ update sharedState msg model =
       DisplayLogin ->
           let emptyForm = SigninForm <| Output.Signin "" ""
           in
-            (formUpdate <| ShowForm emptyForm, Cmd.none)
+            ( formUpdate <| ShowForm emptyForm
+            , Cmd.none
+            , SharedState.NoUpdate
+            )
 
       DisplaySignup ->
         let emptyForm = SignupForm <| Output.Signup "" "" ""
         in
-          (formUpdate <| ShowForm emptyForm, Cmd.none)
+          ( formUpdate <| ShowForm emptyForm
+          , Cmd.none
+          , SharedState.NoUpdate
+          )
 
 
       Form formMsg ->
@@ -138,7 +144,10 @@ update sharedState msg model =
               _ -> model.form
 
         in
-          (formUpdate updatedForm, Cmd.none)
+          ( formUpdate updatedForm
+          , Cmd.none
+          , SharedState.NoUpdate
+          )
 
       SubmitForm ->
         let httpCmd =
@@ -151,16 +160,25 @@ update sharedState msg model =
                 _ -> Cmd.none
 
         in
-          ( formUpdate FormSubmitting, httpCmd )
+          ( formUpdate FormSubmitting
+          , httpCmd
+          , SharedState.NoUpdate
+          )
 
 
       SubmittedForm result ->
         case result of
-          Ok _ ->
-            (Debug.log "success!" model, Nav.pushUrl sharedState.navKey "/admin")
+          Ok admin ->
+            ( Debug.log "success!" model
+            , Nav.pushUrl sharedState.navKey "/admin"
+            , SharedState.UpdateSession <| Session.Admin admin
+            )
 
           Err _ ->
-            (Debug.log "failure!" model, Cmd.none)
+            ( Debug.log "failure!" model,
+              Cmd.none,
+              SharedState.NoUpdate
+            )
 
 
 

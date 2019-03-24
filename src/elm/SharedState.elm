@@ -1,7 +1,9 @@
 module SharedState exposing
   ( SharedState
-  , SharedStateUpdate
+  , SharedStateUpdate(..)
+  , updateSession
   , update
+  , init
   )
   
 
@@ -21,12 +23,26 @@ type alias SharedState =
   }
 
 
+init : Browser.Navigation.Key -> Session.User -> SharedState
+init key session =
+  { navKey  = key
+  , session = session
+  }
+
+
 update : SharedStateUpdate -> SharedState -> SharedState
 update updateMsg state =
   case updateMsg of
     UpdateSession session ->
+      let 
+        _ = Debug.log "Session Updated " session
+      in
       { state | session = session }
   
     NoUpdate ->
       state
 
+
+updateSession : Session.User -> SharedState -> SharedState
+updateSession session state =
+  update (UpdateSession session) state

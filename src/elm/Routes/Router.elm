@@ -2,7 +2,9 @@ module Routes.Router exposing
   ( fromUrl
   , Route(..)
   , Model
-  , Msg
+  , Msg(..)
+  , init
+  , update
   , view
   )
 
@@ -16,7 +18,7 @@ import Url.Parser as Parser exposing (Parser, oneOf, s, string)
 
 import Routes.Home as Home
 import Routes.Admin as Admin 
-import SharedState exposing (SharedState)
+import SharedState exposing (SharedState, SharedStateUpdate)
 
 
 
@@ -46,7 +48,8 @@ type Route
 
 
 type Msg
-  = HomeMsg Home.Msg
+  = UrlChange Url
+  | HomeMsg Home.Msg
   | AdminMsg Admin.Msg
 
 
@@ -60,6 +63,38 @@ parser =
 fromUrl : Url -> Route
 fromUrl = Maybe.withDefault NotFound << Parser.parse parser
 
+
+init : Url -> Model
+init url =
+  { homeModel = Home.init
+  , route     = fromUrl url
+  }
+
+
+
+update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
+update state msg model =
+  case msg of
+    UrlChange url -> 
+      ( { model | route = fromUrl url }
+      , Cmd.none
+      , SharedState.NoUpdate
+      )
+      
+    HomeMsg homeMsg ->
+      let 
+        ( homeModel, homeCmd, sharedStateUpdate ) =
+          Home.update state homeMsg model.homeModel
+      in
+        ( { model
+            | homeModel = homeModel
+          }
+        , Cmd.map HomeMsg homeCmd
+        , Debug.log "Updating shared state..." sharedStateUpdate
+        )
+
+    AdminMsg adminMsg ->
+      ( model, Cmd.none, SharedState.NoUpdate )
 
 
 
@@ -75,7 +110,10 @@ view toMsg sharedState routerModel =
           
 
         Admin ->
-          Admin.view
+          let
+            _ = Debug.log "Rendering Admin View ..." sharedState
+          in
+          Admin.view sharedState
           |> Tuple.mapSecond (Html.map AdminMsg)
           |> Tuple.mapSecond (Html.map toMsg)
 

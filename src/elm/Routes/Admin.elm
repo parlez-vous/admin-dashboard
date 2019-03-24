@@ -6,15 +6,25 @@ module Routes.Admin exposing
 import Html exposing (..)
 
 import Session
+import SharedState exposing (SharedState)
 
 type Msg = NoOp
 
 type alias Title = String
 
-view : (Title, Html Msg)
-view = 
+view : SharedState -> (Title, Html Msg)
+view sharedState = 
   let
-    html = div [] [ text "Admin Panel" ]
+    welcomeMsg =
+      case sharedState.session of
+        Session.Guest -> "Hello stranger!"
+        Session.Admin admin -> "Hello " ++ admin.username ++ "!"
+
+    html =
+      div []
+        [ h1 [] [ text "Admin Panel" ]
+        , div [] [ text welcomeMsg ]
+        ]
 
   in 
   ( "Admin Panel", html )
