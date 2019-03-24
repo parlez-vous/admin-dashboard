@@ -1,6 +1,7 @@
 module Api exposing
   ( adminSignup
   , adminSignin
+  , getAdminSession
   )
 
 import Http

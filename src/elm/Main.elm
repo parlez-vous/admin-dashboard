@@ -11,6 +11,9 @@ import Url.Parser as Parser exposing (Parser, map, oneOf, s, top)
 import List
 
 
+import Api
+import Api.Deserialize as Input
+import SharedState exposing (SharedState)
 import Routes.Admin as Admin
 import Routes.Home as Home
 import Routes.Router as Router
@@ -18,9 +21,13 @@ import Session
 
 
 type alias Model =
-  { key   : Nav.Key
-  , route : Route
+  { state : AppState
+  , url   : Url.Url
   }
+
+type AppState
+  = Ready SharedState Router.Model
+  | NotReady
 
 type Route
   = HomeRoute Home.Model
@@ -30,10 +37,11 @@ type Route
 
 
 type Msg
-  = HomeMsg Home.Msg
-  | AdminMsg Admin.Msg
-  | UrlChanged Url.Url
+  = UrlChanged Url.Url
   | LinkClicked Browser.UrlRequest
+  | SessionVerified (Result Http.Error Input.Admin)
+  | RouterMsg Router.Msg
+
 
 main =
   Browser.application
@@ -52,62 +60,19 @@ subscriptions : Model -> Sub Msg
 subscriptions model = Sub.none
 
 
--- MODEL
-
 
 
 
 
 -- type alias Model = Int
 
-init : () -> Url.Url -> Nav.Key -> (Model, Cmd msg)
+init : () -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
 init _ url key =
-  let
-    -- placeholder for now
-    initialRoute = 
-      case Router.fromUrl url of
-        Just Router.Home -> HomeRoute <| Home.init key
-
-        Just Router.Admin -> Admin Session.Guest
-
-        Nothing -> NotFound
-
-  in
-    (Model key initialRoute, Cmd.none)
-
-
-
--- ROUTER
-
-getRoute : Url.Url -> Model -> (Model, Cmd Msg)
-getRoute url model =
-  let
-    parser =
-      oneOf
-        [ route top
-            ( Model model.key (HomeRoute <| Home.Model model.key Home.FormHidden)
-            )
-        , route (s "admin")
-            ( Model model.key (Admin Session.Guest ))
-        ]
-
-  in
-  case Parser.parse parser url of
-    Just answer ->
-      (answer, Cmd.none)
-
-    Nothing ->
-      ( { model | route = NotFound }
-      , Cmd.none
-      )
-
-
-
-route : Parser a b -> a -> Parser (b -> c) c
-route parser handler =
-  Parser.map handler parser
-
-
+    ( { state = NotReady
+      , url   = url
+      }
+    , Api.getAdminSession SessionVerified
+    )
 
 
 
@@ -115,54 +80,31 @@ route parser handler =
 -- UPDATE
 
 
-createUpdater : Nav.Key -> (m -> Route) -> (msg -> Msg) -> ((m, Cmd msg) -> (Model, Cmd Msg))
-createUpdater key toRoute toMsg =
-  let
-    toModel = (\m -> Model key (toRoute m))
-
-  in
-    Tuple.mapBoth toModel (Cmd.map toMsg)
-
-
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  let
-    updater = createUpdater model.key
+  case msg of
+    RouterMsg routerMsg -> ( model, Cmd.none )
+    
+    UrlChanged url -> ( model, Cmd.none )
 
-  in
-    case msg of
-      HomeMsg homeMsg ->
-        case model.route of
-          HomeRoute formModel -> updater HomeRoute HomeMsg <| Home.update homeMsg formModel
+    LinkClicked _ ->
+      (Debug.log "link clicked" model, Cmd.none)
 
-          _ -> (model, Cmd.none)
-
-      AdminMsg adminMsg -> (Debug.log "adminmsg!" model, Cmd.none)
-
-      UrlChanged url -> getRoute url model
-
-      LinkClicked _ ->
-        (Debug.log "link clicked" model, Cmd.none)
-
+    SessionVerified _ -> ( model, Cmd.none )
 
 
 
 -- VIEW
 
-type alias Document msg =
-    { title : String
-    , body : List (Html msg)
-    }
-
 view : Model -> Browser.Document Msg
 view model =
-  case model.route of
-    NotFound ->
-      { title = "Woops!"
-      , body = [ div [] [ text "404 not found" ] ]
+  case model.state of
+    NotReady ->
+      { title = "Loading"
+      , body = [ div [] [ text "Loading ..." ] ]
       }
 
-    HomeRoute homeModel -> Router.view HomeMsg (Home.view homeModel)
+    Ready sharedState routeModel ->
+      Router.view RouterMsg sharedState routeModel
 
-    Admin adminModel -> Router.view AdminMsg (Admin.view adminModel)

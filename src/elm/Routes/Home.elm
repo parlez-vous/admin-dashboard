@@ -20,7 +20,9 @@ import Api.Output as Output
 import Api.Deserialize as Input
 import Either exposing (Either(..))
 import Logo exposing (logo)
-import Routes.Router as Router
+import SharedState exposing (SharedState)
+
+
 
 -- MODEL
 
@@ -35,8 +37,7 @@ type FormState
   | FormSubmitting
 
 type alias Model =
-  { key: Nav.Key
-  , form: FormState
+  { form: FormState
   }
 
 
@@ -60,8 +61,8 @@ type Msg
   | SubmittedForm (Result Http.Error Input.Admin)
 
 
-init : Nav.Key -> Model
-init key = Model key FormHidden
+init : Model
+init = Model FormHidden
 
 -- UPDATE
 
@@ -107,8 +108,8 @@ updateForm : Model -> FormState -> Model
 updateForm currentModel nextState =
   { currentModel | form = nextState }
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : SharedState -> Msg -> Model -> ( Model, Cmd Msg )
+update sharedState msg model =
   let
     formUpdate = updateForm model
   
@@ -156,7 +157,7 @@ update msg model =
       SubmittedForm result ->
         case result of
           Ok _ ->
-            (Debug.log "success!" model, Nav.pushUrl model.key "/admin")
+            (Debug.log "success!" model, Nav.pushUrl sharedState.navKey "/admin")
 
           Err _ ->
             (Debug.log "failure!" model, Cmd.none)
@@ -168,15 +169,6 @@ update msg model =
 
 
 -- View
-
-
-cta : Html Msg
-cta =
-  div [ class "cta" ]
-    [ button [ onClick DisplayLogin ] [ text "log in" ]
-    , button [ class "button-primary", onClick DisplaySignup ]
-        [ text "sign up"]
-    ]
 
 
 inputWithLabel : String -> String -> String -> String -> (String -> FormMsg) -> List (Html Msg)
@@ -246,19 +238,33 @@ form_ model =
     Html.form [ class "custom-form", onSubmit SubmitForm ] formContent
 
 
-view : Model -> Router.Details Msg
+
+type alias Title = String
+
+view : Model -> (Title, Html Msg)
 view model =
-  { title = "Parlez-Vous | Home"
-  , header = cta
-  , children = [
-      div [ class "container" ]
-        [ div [ class "row" ]
-            [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
-            , pre [ class "center-text" ] [ text "work in progress" ]
-            , div [ class "logo-container" ] [ logo ]
-            , p [ class "center-text" ] [ text "The fastest way to engage your audience" ]
-            , form_ model
+  let
+    cta =
+      div [ class "cta" ]
+        [ button [ onClick DisplayLogin ] [ text "log in" ]
+        , button [ class "button-primary", onClick DisplaySignup ]
+            [ text "sign up"]
+        ]
+
+    html =
+      div []
+        [ cta
+        , div [ class "container" ]
+            [ div [ class "row" ]
+                [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
+                , pre [ class "center-text" ] [ text "work in progress" ]
+                , div [ class "logo-container" ] [ logo ]
+                , p [ class "center-text" ] [ text "The fastest way to engage your audience" ]
+                , form_ model
+                ]
             ]
         ]
-    ]
-  }
+
+  in
+    ( "Home", html )
+
