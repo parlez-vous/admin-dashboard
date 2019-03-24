@@ -11,6 +11,7 @@ import Api.Deserialize as D
 import Api.Output as Output
 
 
+api : String
 api = "http://staging.api.parlez-vous.io/admins"
 
 type alias ToMsg a msg = (Result Http.Error a -> msg)
