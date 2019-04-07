@@ -18,7 +18,7 @@ view sharedState =
     welcomeMsg =
       case sharedState.session of
         Session.Guest -> "Hello stranger!"
-        Session.Admin admin -> "Hello " ++ admin.username ++ "!"
+        Session.Admin (admin, _) -> "Hello " ++ admin.username ++ "!"
 
     html =
       div []

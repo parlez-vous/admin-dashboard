@@ -96,14 +96,14 @@ update msg model =
           case model.state of
             Ready sharedState routerModel ->
               ( { model
-                  | state = Ready (SharedState.updateSession (Session.Admin admin) sharedState) routerModel
+                  | state = Ready (SharedState.updateSession (Session.Admin (admin, "placeholder")) sharedState) routerModel
                 }
               , Cmd.none
               )
 
             NotReady key ->
               ( { model
-                  | state = Ready (SharedState.init key <| Session.Admin admin) (Router.init model.url)
+                  | state = Ready (SharedState.init key <| Session.Admin (admin, "placeholder")) (Router.init model.url)
                 }
               , Cmd.none
               )

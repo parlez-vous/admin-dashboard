@@ -58,7 +58,7 @@ type Msg
   | DisplaySignup
   | Form FormMsg
   | SubmitForm
-  | SubmittedForm (Result Http.Error Input.Admin)
+  | SubmittedForm (Result Http.Error Input.AdminWithToken)
 
 
 init : Model
@@ -168,10 +168,10 @@ update sharedState msg model =
 
       SubmittedForm result ->
         case result of
-          Ok admin ->
+          Ok adminWithToken ->
             ( Debug.log "success!" model
             , Nav.pushUrl sharedState.navKey "/admin"
-            , SharedState.UpdateSession <| Session.Admin admin
+            , SharedState.UpdateSession <| Session.Admin adminWithToken
             )
 
           Err _ ->

@@ -4,4 +4,4 @@ import Api.Deserialize as Input
 
 type User
   = Guest
-  | Admin Input.Admin
+  | Admin Input.AdminWithToken

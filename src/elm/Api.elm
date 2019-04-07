@@ -16,17 +16,55 @@ api = "http://staging.api.parlez-vous.io/admins"
 
 type alias ToMsg a msg = (Result Http.Error a -> msg)
 
+type alias RequestTemplate =
+  { method  : String
+  , headers : List Http.Header
+  , tracker : Maybe String
+  , timeout : Maybe Float
+  }
+
+type Method
+  = Get
+  | Post
+
+
+requestFactory : Method -> RequestTemplate
+requestFactory method =
+  let
+    rawMethod =
+      case method of
+        Get  -> "GET"
+        Post -> "POST"
+
+  in
+  { method  = rawMethod
+  , headers = []
+  , tracker = Nothing
+  , timeout = Nothing
+  }
+
+
+
 post :
   String ->
   Http.Body ->
   Http.Expect msg ->
   Cmd msg
-post endpoint body expect = 
-  Http.post
-    { url = api ++ endpoint
+post endpoint body expect =
+  let
+    extraInfo = requestFactory Post
+    
+  in
+  Http.request
+    { method = extraInfo.method
+    , url = api ++ endpoint
+    , headers = extraInfo.headers
     , body = body
     , expect = expect
+    , timeout = extraInfo.timeout
+    , tracker = extraInfo.tracker
     }
+
 
 
 get :
@@ -34,13 +72,21 @@ get :
   Http.Expect msg ->
   Cmd msg
 get endpoint expect =
-  Http.get
-    { url = api ++ endpoint
+  let
+    extraInfo = requestFactory Get
+  in
+  Http.request
+    { method = extraInfo.method
+    , url = api ++ endpoint
+    , headers = extraInfo.headers
+    , body = Http.emptyBody
     , expect = expect
+    , timeout = extraInfo.timeout
+    , tracker = extraInfo.tracker
     }
 
 
-adminSignup : ToMsg D.Admin msg -> Output.Signup -> Cmd msg
+adminSignup : ToMsg D.AdminWithToken msg -> Output.Signup -> Cmd msg
 adminSignup toMsg data =
   let
     signupJson = 
@@ -52,14 +98,14 @@ adminSignup toMsg data =
 
     body = Http.jsonBody signupJson
 
-    expect = Http.expectJson toMsg D.adminDecoder
+    expect = Http.expectJson toMsg D.adminAndTokenDecoder
 
   in
     post "/signup" body expect
 
 
 
-adminSignin : ToMsg D.Admin msg -> Output.Signin -> Cmd msg
+adminSignin : ToMsg D.AdminWithToken msg -> Output.Signin -> Cmd msg
 adminSignin toMsg data =
   let
     signinJson =
@@ -70,7 +116,7 @@ adminSignin toMsg data =
     
     body = Http.jsonBody signinJson
 
-    expect = Http.expectJson toMsg D.adminDecoder
+    expect = Http.expectJson toMsg D.adminAndTokenDecoder
 
   in
     post "/signin" body expect
