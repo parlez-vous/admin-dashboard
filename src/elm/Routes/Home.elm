@@ -1,4 +1,4 @@
-module Routes.Home exposing
+port module Routes.Home exposing
   ( Model
   , FormType(..)
   , FormState(..)
@@ -41,6 +41,11 @@ type alias Model =
   }
 
 
+
+
+-- PORTS
+
+port setToken : Input.SessionToken -> Cmd msg
 
 
 
@@ -169,8 +174,15 @@ update sharedState msg model =
       SubmittedForm result ->
         case result of
           Ok adminWithToken ->
+            let
+              commands =
+                Cmd.batch
+                  [ setToken <| Tuple.second adminWithToken
+                  , Nav.pushUrl sharedState.navKey "/admin"
+                  ]
+            in
             ( Debug.log "success!" model
-            , Nav.pushUrl sharedState.navKey "/admin"
+            , commands
             , SharedState.UpdateSession <| Session.Admin adminWithToken
             )
 

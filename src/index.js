@@ -6,8 +6,14 @@ require('./css/custom.css')
 
 const Elm = require('./elm/Main.elm').Elm;
 
-const token = localStorage.getItem('@pv/token')
+const storagekey = '@pv/token'
 
-Elm.Main.init({
+const token = localStorage.getItem(storagekey)
+
+const app = Elm.Main.init({
   flags: token
 });
+
+app.ports.setToken.subscribe((t) => {
+  localStorage.setItem(storagekey, t)
+})
