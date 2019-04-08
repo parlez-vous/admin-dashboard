@@ -1,6 +1,5 @@
 module Routes.Router exposing
   ( fromUrl
-  , Route(..)
   , Model
   , Msg(..)
   , init
