@@ -11,7 +11,7 @@ import List
 
 import Api
 import Api.Deserialize as Input
-import SharedState exposing (SharedState, updateSession)
+import SharedState exposing (SharedState)
 import Routes.Admin as Admin
 import Routes.Home as Home
 import Routes.Router as Router

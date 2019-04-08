@@ -1,7 +1,6 @@
 module SharedState exposing
   ( SharedState
   , SharedStateUpdate(..)
-  , updateSession
   , update
   , init
   )
@@ -43,8 +42,3 @@ update updateMsg state =
   
     NoUpdate ->
       state
-
-
-updateSession : Session.User -> SharedState -> SharedState
-updateSession session state =
-  update (UpdateSession session) state
