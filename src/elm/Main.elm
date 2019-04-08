@@ -64,7 +64,7 @@ init maybeToken url key =
     (state, cmd) = case maybeToken of
       Just t  ->
         ( NotReady key t
-        , Api.getAdminSession <| SessionVerified t key
+        , Api.getAdminSession t <| SessionVerified t key
         )
       Nothing ->
         ( Ready (SharedState.init key Session.Guest) (Router.init url)

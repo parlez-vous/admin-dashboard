@@ -6,8 +6,9 @@ module Api exposing
 
 import Http
 import Json.Encode as E
+import Json.Decode as D exposing (Decoder)
 
-import Api.Deserialize as D
+import Api.Deserialize as Input
 import Api.Output as Output
 
 
@@ -28,8 +29,8 @@ type Method
   | Post
 
 
-requestFactory : Method -> RequestTemplate
-requestFactory method =
+secureRequestFactory : Method -> Input.SessionToken -> RequestTemplate
+secureRequestFactory method token =
   let
     rawMethod =
       case method of
@@ -38,21 +39,22 @@ requestFactory method =
 
   in
   { method  = rawMethod
-  , headers = []
+  , headers = [ Http.header "Authorization" token ]
   , tracker = Nothing
   , timeout = Nothing
   }
 
 
 
-post :
+securePost :
   String ->
+  Input.SessionToken ->
   Http.Body ->
   Http.Expect msg ->
   Cmd msg
-post endpoint body expect =
+securePost endpoint token body expect =
   let
-    extraInfo = requestFactory Post
+    extraInfo = secureRequestFactory Post token
     
   in
   Http.request
@@ -67,13 +69,15 @@ post endpoint body expect =
 
 
 
-get :
+secureGet :
   String ->
+  Input.SessionToken ->
   Http.Expect msg ->
   Cmd msg
-get endpoint expect =
+secureGet endpoint token expect =
   let
-    extraInfo = requestFactory Get
+    extraInfo = secureRequestFactory Get token
+
   in
   Http.request
     { method = extraInfo.method
@@ -86,7 +90,7 @@ get endpoint expect =
     }
 
 
-adminSignup : ToMsg D.AdminWithToken msg -> Output.Signup -> Cmd msg
+adminSignup : ToMsg Input.AdminWithToken msg -> Output.Signup -> Cmd msg
 adminSignup toMsg data =
   let
     signupJson = 
@@ -98,14 +102,18 @@ adminSignup toMsg data =
 
     body = Http.jsonBody signupJson
 
-    expect = Http.expectJson toMsg D.adminAndTokenDecoder
+    expect = Http.expectJson toMsg Input.adminAndTokenDecoder
 
   in
-    post "/signup" body expect
+    Http.post
+      { body = body
+      , expect = expect
+      , url = api ++ "/signup"
+      }
 
 
 
-adminSignin : ToMsg D.AdminWithToken msg -> Output.Signin -> Cmd msg
+adminSignin : ToMsg Input.AdminWithToken msg -> Output.Signin -> Cmd msg
 adminSignin toMsg data =
   let
     signinJson =
@@ -116,17 +124,26 @@ adminSignin toMsg data =
     
     body = Http.jsonBody signinJson
 
-    expect = Http.expectJson toMsg D.adminAndTokenDecoder
+    expect = Http.expectJson toMsg Input.adminAndTokenDecoder
 
   in
-    post "/signin" body expect
+    Http.post
+      { body = body
+      , expect = expect
+      , url = api ++ "/signin"
+      }
+    
 
 
-getAdminSession : ToMsg D.Admin msg -> Cmd msg
-getAdminSession toMsg =
+
+
+-- Private Routes
+
+getAdminSession : Input.SessionToken -> ToMsg Input.Admin msg -> Cmd msg
+getAdminSession token toMsg =
   let
-    expect = Http.expectJson toMsg D.adminDecoder
+    expect = Http.expectJson toMsg (D.field "data" Input.adminDecoder)
 
   in
-    get "/profile" expect
+    secureGet "/profile" token expect
 
