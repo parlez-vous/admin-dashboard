@@ -22,3 +22,7 @@ const app = Elm.Main.init({
 app.ports.setToken.subscribe((t) => {
   localStorage.setItem(storagekey, t)
 })
+
+app.ports.removeToken.subscribe(() => {
+  localStorage.removeItem(storagekey)
+})

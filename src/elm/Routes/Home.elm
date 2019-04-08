@@ -1,7 +1,5 @@
 port module Routes.Home exposing
   ( Model
-  , FormType(..)
-  , FormState(..)
   , Msg
   , init
   , update
@@ -19,6 +17,7 @@ import Api
 import Api.Output as Output
 import Api.Deserialize as Input
 import Logo exposing (logo)
+import Utils exposing (logout)
 import Session
 import SharedState exposing (SharedState, SharedStateUpdate)
 
@@ -61,6 +60,7 @@ type Msg
   | SubmitForm FormType
   | SubmittedForm (Result Http.Error Input.AdminWithToken)
   | GoToDashboard
+  | LogOut
 
 
 init : Model
@@ -180,6 +180,16 @@ update sharedState msg model =
         , SharedState.NoUpdate
         )
 
+      LogOut ->
+        let
+          ( sharedStateUpdate, cmd ) = logout
+
+        in
+        ( model
+        , cmd
+        , sharedStateUpdate
+        )
+
 
 
 
@@ -272,7 +282,7 @@ view user model =
     ctaButtons =
       case user of
         Session.Admin _ -> 
-          [ button [] [ text "log out" ]
+          [ button [ onClick LogOut ] [ text "log out" ]
           , button [ class "button-primary", onClick GoToDashboard ]
               [ text "Go To Dashboard" ]
           ]
