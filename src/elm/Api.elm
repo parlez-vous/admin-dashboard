@@ -12,9 +12,6 @@ import Api.Deserialize as Input
 import Api.Output as Output
 
 
-api : String
-api = "http://staging.api.parlez-vous.io/admins"
-
 type alias ToMsg a msg = (Result Http.Error a -> msg)
 
 type alias RequestTemplate =
@@ -59,7 +56,7 @@ securePost endpoint token body expect =
   in
   Http.request
     { method = extraInfo.method
-    , url = api ++ endpoint
+    , url = endpoint
     , headers = extraInfo.headers
     , body = body
     , expect = expect
@@ -81,7 +78,7 @@ secureGet endpoint token expect =
   in
   Http.request
     { method = extraInfo.method
-    , url = api ++ endpoint
+    , url = endpoint
     , headers = extraInfo.headers
     , body = Http.emptyBody
     , expect = expect
@@ -90,8 +87,8 @@ secureGet endpoint token expect =
     }
 
 
-adminSignup : ToMsg Input.AdminWithToken msg -> Output.Signup -> Cmd msg
-adminSignup toMsg data =
+adminSignup : String -> ToMsg Input.AdminWithToken msg -> Output.Signup -> Cmd msg
+adminSignup api toMsg data =
   let
     signupJson = 
       E.object
@@ -113,8 +110,8 @@ adminSignup toMsg data =
 
 
 
-adminSignin : ToMsg Input.AdminWithToken msg -> Output.Signin -> Cmd msg
-adminSignin toMsg data =
+adminSignin : String -> ToMsg Input.AdminWithToken msg -> Output.Signin -> Cmd msg
+adminSignin api toMsg data =
   let
     signinJson =
       E.object
@@ -139,11 +136,14 @@ adminSignin toMsg data =
 
 -- Private Routes
 
-getAdminSession : Input.SessionToken -> ToMsg Input.Admin msg -> Cmd msg
-getAdminSession token toMsg =
+getAdminSession : Input.SessionToken -> String -> ToMsg Input.Admin msg -> Cmd msg
+getAdminSession token api toMsg =
   let
     expect = Http.expectJson toMsg (D.field "data" Input.adminDecoder)
 
   in
-    secureGet "/profile" token expect
+    secureGet
+      (api ++ "/profile")
+      token 
+      expect
 

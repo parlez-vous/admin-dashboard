@@ -8,10 +8,15 @@ const Elm = require('./elm/Main.elm').Elm;
 
 const storagekey = '@pv/token'
 
+const api = process.env.API || 'http://staging.api.parlez-vous.io/admins'
+
 const token = localStorage.getItem(storagekey)
 
 const app = Elm.Main.init({
-  flags: token
+  flags: { 
+    token, 
+    api
+  },
 });
 
 app.ports.setToken.subscribe((t) => {

@@ -62,7 +62,7 @@ type Msg
   = DisplayLogin
   | DisplaySignup
   | Form FormMsg
-  | SubmitForm
+  | SubmitForm FormType
   | SubmittedForm (Result Http.Error Input.AdminWithToken)
 
 
@@ -99,14 +99,14 @@ updateFormField currentForm msg =
 
 
 
-handleSubmitForm : FormType -> Cmd Msg
-handleSubmitForm form =
+handleSubmitForm : String -> FormType -> Cmd Msg
+handleSubmitForm api form =
   case form of 
     SignupForm data ->
-      Api.adminSignup SubmittedForm data
+      Api.adminSignup api SubmittedForm data
 
     SigninForm data ->
-      Api.adminSignin SubmittedForm data
+      Api.adminSignin api SubmittedForm data
 
 
 updateForm : Model -> FormState -> Model
@@ -154,21 +154,11 @@ update sharedState msg model =
           , SharedState.NoUpdate
           )
 
-      SubmitForm ->
-        let httpCmd =
-              case model.form of
-                ShowForm form ->
-                  handleSubmitForm form
-                
-                -- this seems like a code smell
-                -- this state should never occur
-                _ -> Cmd.none
-
-        in
-          ( formUpdate FormSubmitting
-          , httpCmd
-          , SharedState.NoUpdate
-          )
+      SubmitForm form ->
+        ( formUpdate FormSubmitting
+        , handleSubmitForm sharedState.api form
+        , SharedState.NoUpdate
+        )
 
 
       SubmittedForm result ->
@@ -265,7 +255,16 @@ form_ model =
               List.append (baseForm data) [ submitBtn ]
           
   in
-    Html.form [ class "custom-form", onSubmit SubmitForm ] formContent
+    let
+      action =
+        case model.form of
+          ShowForm formData -> [ onSubmit (SubmitForm formData) ]
+          _                 -> []
+
+    in
+    Html.form
+      ([ class "custom-form" ] ++ action)
+      formContent
 
 
 

@@ -20,13 +20,15 @@ type SharedStateUpdate
 type alias SharedState =
   { navKey  : Browser.Navigation.Key
   , session : Session.User
+  , api     : String
   }
 
 
-init : Browser.Navigation.Key -> Session.User -> SharedState
-init key session =
+init : Browser.Navigation.Key -> Session.User -> String -> SharedState
+init key session api =
   { navKey  = key
   , session = session
+  , api     = api
   }
 
 

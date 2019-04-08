@@ -25,7 +25,7 @@ type alias Model =
 
 type AppState
   = Ready SharedState Router.Model
-  | NotReady Nav.Key Input.SessionToken
+  | NotReady Nav.Key Input.SessionToken String
 
 
 type Msg
@@ -55,19 +55,25 @@ subscriptions model = Sub.none
 
 
 
+type alias Flags =
+  { token : Maybe Input.SessionToken
+  , api   : String
+  }
 
 -- type alias Model = Int
 
-init : Maybe Input.SessionToken -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
-init maybeToken url key =
+init : Flags -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
+init flags url key =
   let
-    (state, cmd) = case maybeToken of
+    (state, cmd) = case flags.token of
       Just t  ->
-        ( NotReady key t
-        , Api.getAdminSession t <| SessionVerified t key
+        ( NotReady key t flags.api
+        , Api.getAdminSession t flags.api <| SessionVerified t key
         )
       Nothing ->
-        ( Ready (SharedState.init key Session.Guest) (Router.init url)
+        ( Ready
+            (SharedState.init key Session.Guest flags.api)
+            (Router.init url)
         , Cmd.none
         )
 
@@ -87,10 +93,6 @@ init maybeToken url key =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  let
-    _ = Debug.log "UPDATE" msg
-    
-  in
   case msg of
     RouterMsg routerMsg ->
       updateRouter routerMsg model
@@ -102,11 +104,18 @@ update msg model =
       (Debug.log "link clicked" model, Cmd.none)
 
     SessionVerified token key result ->
+      let
+        api =
+          case model.state of
+            Ready sharedState _ -> sharedState.api
+            NotReady _ _ api_    -> api_
+
+      in
       case result of
         Ok admin ->
           let
             sharedState =
-              SharedState.init key <| Session.Admin (admin, token)
+              SharedState.init key (Session.Admin (admin, token)) api
 
           in
           ( { model
@@ -119,9 +128,12 @@ update msg model =
           let
             _ = (Debug.log "Error while verifying session" e)
 
+            sharedState =
+              SharedState.init key Session.Guest api
+
           in
             ( { model
-                | state = Ready (SharedState.init key Session.Guest) (Router.init model.url)
+                | state = Ready sharedState (Router.init model.url)
               }
             , Cmd.none
             )
