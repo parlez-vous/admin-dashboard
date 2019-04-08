@@ -104,7 +104,7 @@ view toMsg sharedState routerModel =
     ( title, html ) =
       case routerModel.route of
         Home ->
-          Home.view routerModel.homeModel
+          Home.view sharedState.session routerModel.homeModel
           |> Tuple.mapSecond (Html.map HomeMsg)
           |> Tuple.mapSecond (Html.map toMsg)
           

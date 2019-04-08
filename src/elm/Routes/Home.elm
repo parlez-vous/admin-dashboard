@@ -60,6 +60,7 @@ type Msg
   | Form FormMsg
   | SubmitForm FormType
   | SubmittedForm (Result Http.Error Input.AdminWithToken)
+  | GoToDashboard
 
 
 init : Model
@@ -173,6 +174,12 @@ update sharedState msg model =
               SharedState.NoUpdate
             )
 
+      GoToDashboard ->
+        ( model
+        , Nav.pushUrl sharedState.navKey "/admin"
+        , SharedState.NoUpdate
+        )
+
 
 
 
@@ -220,6 +227,11 @@ form_ model =
         button [ ] [ text "submit" ]
       else
         div [] []
+
+    action =
+      case model of
+        ShowForm formData -> [ onSubmit (SubmitForm formData) ]
+        _                 -> []
       
 
     baseForm { username, password } =
@@ -246,13 +258,6 @@ form_ model =
               List.append (baseForm data) [ submitBtn ]
           
   in
-    let
-      action =
-        case model of
-          ShowForm formData -> [ onSubmit (SubmitForm formData) ]
-          _                 -> []
-
-    in
     Html.form
       ([ class "custom-form" ] ++ action)
       formContent
@@ -261,19 +266,27 @@ form_ model =
 
 type alias Title = String
 
-view : Model -> (Title, Html Msg)
-view model =
+view : Session.User -> Model -> (Title, Html Msg)
+view user model =
   let
-    cta =
-      div [ class "cta" ]
-        [ button [ onClick DisplayLogin ] [ text "log in" ]
-        , button [ class "button-primary", onClick DisplaySignup ]
-            [ text "sign up"]
-        ]
+    ctaButtons =
+      case user of
+        Session.Admin _ -> 
+          [ button [] [ text "log out" ]
+          , button [ class "button-primary", onClick GoToDashboard ]
+              [ text "Go To Dashboard" ]
+          ]
+
+        Session.Guest ->
+          [ button [ onClick DisplayLogin ] [ text "log in" ]
+          , button [ class "button-primary", onClick DisplaySignup ]
+              [ text "sign up"]
+          ]
+
 
     html =
       div []
-        [ cta
+        [ div [ class "cta" ] ctaButtons
         , div [ class "container" ]
             [ div [ class "row" ]
                 [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
