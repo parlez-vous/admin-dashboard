@@ -36,12 +36,8 @@ type FormState
   | FormHidden
   | FormSubmitting
 
-type alias Model =
-  { form: FormState
-  }
 
-
-
+type alias Model = FormState
 
 -- PORTS
 
@@ -67,7 +63,7 @@ type Msg
 
 
 init : Model
-init = Model FormHidden
+init = FormHidden
 
 -- UPDATE
 
@@ -108,22 +104,17 @@ handleSubmitForm api form =
     SigninForm data ->
       Api.adminSignin api SubmittedForm data
 
-
-updateForm : Model -> FormState -> Model
-updateForm currentModel nextState =
-  { currentModel | form = nextState }
-
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update sharedState msg model =
   let
-    formUpdate = updateForm model
+    _ = 1
   
   in
     case msg of
       DisplayLogin ->
           let emptyForm = SigninForm <| Output.Signin "" ""
           in
-            ( formUpdate <| ShowForm emptyForm
+            ( ShowForm emptyForm
             , Cmd.none
             , SharedState.NoUpdate
             )
@@ -131,7 +122,7 @@ update sharedState msg model =
       DisplaySignup ->
         let emptyForm = SignupForm <| Output.Signup "" "" ""
         in
-          ( formUpdate <| ShowForm emptyForm
+          ( ShowForm emptyForm
           , Cmd.none
           , SharedState.NoUpdate
           )
@@ -140,22 +131,22 @@ update sharedState msg model =
       Form formMsg ->
         let
           updatedForm =
-            case model.form of
+            case model of
               ShowForm form ->
                 ShowForm <| updateFormField form formMsg
             
               -- this seems like a code smell
               -- this state should never occur
-              _ -> model.form
+              _ -> model
 
         in
-          ( formUpdate updatedForm
+          ( updatedForm
           , Cmd.none
           , SharedState.NoUpdate
           )
 
       SubmitForm form ->
-        ( formUpdate FormSubmitting
+        ( FormSubmitting
         , handleSubmitForm sharedState.api form
         , SharedState.NoUpdate
         )
@@ -209,7 +200,7 @@ form_ : Model -> Html Msg
 form_ model =
   let
     readyToSubmit =
-      case model.form of
+      case model of
         ShowForm form ->
           case form of
             SignupForm data -> 
@@ -237,7 +228,7 @@ form_ model =
         (pswdInput "password-input" password PasswordInput)
 
     formContent =
-      case model.form of
+      case model of
         FormHidden -> []
 
         FormSubmitting -> [ div [ class "center-text" ] [ text "submitting ..." ] ]
@@ -257,7 +248,7 @@ form_ model =
   in
     let
       action =
-        case model.form of
+        case model of
           ShowForm formData -> [ onSubmit (SubmitForm formData) ]
           _                 -> []
 
