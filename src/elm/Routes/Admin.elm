@@ -8,8 +8,9 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
+import Api.Deserialize as Api
 import Session
-import SharedState exposing (SharedState, SharedStateUpdate(..))
+import SharedState exposing (SharedStateUpdate(..))
 import Utils exposing (logout)
 
 
@@ -24,13 +25,10 @@ update _ = logout
 
 type alias Title = String
 
-view : SharedState -> (Title, Html Msg)
-view sharedState = 
+view : Api.Admin -> (Title, Html Msg)
+view admin = 
   let
-    welcomeMsg =
-      case sharedState.session of
-        Session.Guest -> "Hello stranger!"
-        Session.Admin (admin, _) -> "Hello " ++ admin.username ++ "!"
+    welcomeMsg = "Hello " ++ admin.username ++ "!"
 
     html =
       div [ class "admin-page" ]

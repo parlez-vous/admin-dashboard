@@ -1,6 +1,5 @@
 module Routes.Router exposing
-  ( fromUrl
-  , Model
+  ( Model
   , Msg(..)
   , init
   , update
@@ -130,9 +129,16 @@ view toMsg sharedState routerModel =
           
 
         Admin ->
-          Admin.view sharedState
-          |> Tuple.mapSecond (Html.map AdminMsg)
-          |> Tuple.mapSecond (Html.map toMsg)
+          case sharedState.session of
+            Session.Guest ->
+              ( "Redirecting ..."
+              , div [] [ text "Redirecting ..."]
+              )
+            
+            Session.Admin ( admin, _ ) -> 
+              Admin.view admin
+              |> Tuple.mapSecond (Html.map AdminMsg)
+              |> Tuple.mapSecond (Html.map toMsg)
 
         NotFound ->
           ( "Woops!", div [] [ text "404 Not Found"] )
