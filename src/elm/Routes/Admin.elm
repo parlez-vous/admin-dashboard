@@ -1,14 +1,26 @@
 module Routes.Admin exposing
   ( Msg
+  , update
   , view
   )
 
 import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 
 import Session
-import SharedState exposing (SharedState)
+import SharedState exposing (SharedState, SharedStateUpdate(..))
+import Utils exposing (logout)
 
-type Msg = NoOp
+
+type Msg = LogOut
+
+
+
+update : Msg -> ( Cmd msg, SharedStateUpdate )
+update _ = logout
+  
+
 
 type alias Title = String
 
@@ -21,8 +33,10 @@ view sharedState =
         Session.Admin (admin, _) -> "Hello " ++ admin.username ++ "!"
 
     html =
-      div []
-        [ h1 [] [ text "Admin Panel" ]
+      div [ class "admin-page" ]
+        [ nav [ class "navbar" ]
+            [ button [ onClick LogOut ] [ text "Log Out" ] ]
+        , h1 [] [ text "Admin Panel" ]
         , div [] [ text welcomeMsg ]
         ]
 
