@@ -296,7 +296,7 @@ view user model =
 
     html =
       div []
-        [ div [ class "cta" ] ctaButtons
+        [ div [ class "navbar" ] ctaButtons
         , div [ class "container" ]
             [ div [ class "row" ]
                 [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
