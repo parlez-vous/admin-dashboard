@@ -71,10 +71,14 @@ init flags url key =
         , Api.getAdminSession t flags.api <| SessionVerified t key
         )
       Nothing ->
+        let
+          ( routerModel, routerMsg ) = Router.init url key Session.Guest
+
+        in
         ( Ready
             (SharedState.init key Session.Guest flags.api)
-            (Router.init url)
-        , Cmd.none
+            routerModel
+        , routerMsg
         )
 
   in
@@ -114,28 +118,34 @@ update msg model =
       case result of
         Ok admin ->
           let
+            adminSession = Session.Admin (admin, token)
+
+            ( routerModel, routerCmd ) = Router.init model.url key adminSession
+          
             sharedState =
-              SharedState.init key (Session.Admin (admin, token)) api
+              SharedState.init key adminSession api
 
           in
           ( { model
-              | state = Ready sharedState (Router.init model.url)
+              | state = Ready sharedState routerModel
             }
-          , Cmd.none
+          , routerCmd
           )
 
         Err e ->
           let
             _ = (Debug.log "Error while verifying session" e)
 
+            ( routerModel, routerCmd ) = Router.init model.url key Session.Guest
+
             sharedState =
               SharedState.init key Session.Guest api
 
           in
             ( { model
-                | state = Ready sharedState (Router.init model.url)
+                | state = Ready sharedState routerModel
               }
-            , Cmd.none
+            , routerCmd
             )
 
               

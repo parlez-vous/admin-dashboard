@@ -10,6 +10,7 @@ module Routes.Router exposing
 
 import Html as Html exposing (..)
 import Browser
+import Browser.Navigation as Nav
 import Url exposing (Url)
 import Url.Parser as Parser exposing (Parser, oneOf, s, string)
 
@@ -17,6 +18,7 @@ import Url.Parser as Parser exposing (Parser, oneOf, s, string)
 
 import Routes.Home as Home
 import Routes.Admin as Admin 
+import Session
 import SharedState exposing (SharedState, SharedStateUpdate)
 
 
@@ -63,11 +65,24 @@ fromUrl : Url -> Route
 fromUrl = Maybe.withDefault NotFound << Parser.parse parser
 
 
-init : Url -> Model
-init url =
-  { homeModel = Home.init
-  , route     = fromUrl url
-  }
+init : Url -> Nav.Key -> Session.User -> ( Model, Cmd msg )
+init url navKey session =
+  let
+    route = fromUrl url
+
+    cmd =
+      case ( session, route ) of
+        -- If guest visits a private route, redirect them to the home page
+        ( Session.Guest, Admin ) -> Nav.pushUrl navKey "/"
+
+        _ -> Cmd.none
+
+  in
+  ( { homeModel = Home.init
+    , route     = route
+    }
+  , cmd
+  )
 
 
 
