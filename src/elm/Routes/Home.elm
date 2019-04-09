@@ -107,88 +107,84 @@ handleSubmitForm api form =
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update sharedState msg model =
-  let
-    _ = 1
-  
-  in
-    case msg of
-      DisplayLogin ->
-          let emptyForm = SigninForm <| Output.Signin "" ""
-          in
-            ( ShowForm emptyForm
-            , Cmd.none
-            , SharedState.NoUpdate
-            )
-
-      DisplaySignup ->
-        let emptyForm = SignupForm <| Output.Signup "" "" ""
+  case msg of
+    DisplayLogin ->
+        let emptyForm = SigninForm <| Output.Signin "" ""
         in
           ( ShowForm emptyForm
           , Cmd.none
           , SharedState.NoUpdate
           )
 
+    DisplaySignup ->
+      let emptyForm = SignupForm <| Output.Signup "" "" ""
+      in
+        ( ShowForm emptyForm
+        , Cmd.none
+        , SharedState.NoUpdate
+        )
 
-      Form formMsg ->
-        let
-          updatedForm =
-            case model of
-              ShowForm form ->
-                ShowForm <| updateFormField form formMsg
-            
-              -- this seems like a code smell
-              -- this state should never occur
-              _ -> model
 
-        in
-          ( updatedForm
-          , Cmd.none
-          , SharedState.NoUpdate
+    Form formMsg ->
+      let
+        updatedForm =
+          case model of
+            ShowForm form ->
+              ShowForm <| updateFormField form formMsg
+          
+            -- this seems like a code smell
+            -- this state should never occur
+            _ -> model
+
+      in
+        ( updatedForm
+        , Cmd.none
+        , SharedState.NoUpdate
+        )
+
+    SubmitForm form ->
+      ( FormSubmitting
+      , handleSubmitForm sharedState.api form
+      , SharedState.NoUpdate
+      )
+
+
+    SubmittedForm result ->
+      case result of
+        Ok adminWithToken ->
+          let
+            commands =
+              Cmd.batch
+                [ setToken <| Tuple.second adminWithToken
+                , Nav.pushUrl sharedState.navKey "/admin"
+                ]
+          in
+          ( FormHidden
+          , commands
+          , SharedState.UpdateSession <| Session.Admin adminWithToken
           )
 
-      SubmitForm form ->
-        ( FormSubmitting
-        , handleSubmitForm sharedState.api form
-        , SharedState.NoUpdate
-        )
+        Err _ ->
+          ( Debug.log "failure!" model,
+            Cmd.none,
+            SharedState.NoUpdate
+          )
 
+    GoToDashboard ->
+      ( model
+      , Nav.pushUrl sharedState.navKey "/admin"
+      , SharedState.NoUpdate
+      )
 
-      SubmittedForm result ->
-        case result of
-          Ok adminWithToken ->
-            let
-              commands =
-                Cmd.batch
-                  [ setToken <| Tuple.second adminWithToken
-                  , Nav.pushUrl sharedState.navKey "/admin"
-                  ]
-            in
-            ( Debug.log "success!" model
-            , commands
-            , SharedState.UpdateSession <| Session.Admin adminWithToken
-            )
+    LogOut ->
+      let
+        ( cmd, sharedStateUpdate ) = logout
 
-          Err _ ->
-            ( Debug.log "failure!" model,
-              Cmd.none,
-              SharedState.NoUpdate
-            )
-
-      GoToDashboard ->
-        ( model
-        , Nav.pushUrl sharedState.navKey "/admin"
-        , SharedState.NoUpdate
-        )
-
-      LogOut ->
-        let
-          ( cmd, sharedStateUpdate ) = logout
-
-        in
-        ( model
-        , cmd
-        , sharedStateUpdate
-        )
+      in
+      ( model
+      , cmd
+      , sharedStateUpdate
+      )
 
 
 

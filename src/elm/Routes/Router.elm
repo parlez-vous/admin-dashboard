@@ -108,7 +108,7 @@ update state msg model =
 
     AdminMsg adminMsg ->
       let
-        ( adminCmd, sharedStateUpdate ) = Admin.update adminMsg
+        ( adminCmd, sharedStateUpdate ) = Admin.update state adminMsg
       in
       ( model
       , Cmd.map AdminMsg adminCmd

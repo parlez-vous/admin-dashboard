@@ -4,13 +4,14 @@ module Routes.Admin exposing
   , view
   )
 
+import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
 import Api.Deserialize as Api
 import Session
-import SharedState exposing (SharedStateUpdate(..))
+import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Utils exposing (logout)
 
 
@@ -18,9 +19,16 @@ type Msg = LogOut
 
 
 
-update : Msg -> ( Cmd msg, SharedStateUpdate )
-update _ = logout
-  
+update : SharedState -> Msg -> ( Cmd msg, SharedStateUpdate )
+update state _ =
+  let
+    ( logOutCmd, sharedStateUpdate ) = logout
+
+  in
+    ( Cmd.batch [ logOutCmd, Nav.pushUrl state.navKey "/" ]
+    , sharedStateUpdate
+    )
+
 
 
 type alias Title = String
