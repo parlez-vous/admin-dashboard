@@ -5,8 +5,8 @@ import SharedState exposing (SharedStateUpdate(..))
 
 port removeToken : () -> Cmd msg
 
-logout : ( SharedStateUpdate, Cmd msg )
+logout : ( Cmd msg, SharedStateUpdate )
 logout =
-  ( SharedState.UpdateSession Session.Guest
-  , removeToken ()
+  ( removeToken ()
+  , SharedState.UpdateSession Session.Guest
   )

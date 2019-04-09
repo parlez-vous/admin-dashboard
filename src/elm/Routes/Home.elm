@@ -182,7 +182,7 @@ update sharedState msg model =
 
       LogOut ->
         let
-          ( sharedStateUpdate, cmd ) = logout
+          ( cmd, sharedStateUpdate ) = logout
 
         in
         ( model
