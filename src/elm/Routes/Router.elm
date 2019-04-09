@@ -89,7 +89,7 @@ update state msg model =
             | homeModel = homeModel
           }
         , Cmd.map HomeMsg homeCmd
-        , Debug.log "Updating shared state..." sharedStateUpdate
+        , sharedStateUpdate
         )
 
     AdminMsg adminMsg ->
@@ -115,9 +115,6 @@ view toMsg sharedState routerModel =
           
 
         Admin ->
-          let
-            _ = Debug.log "Rendering Admin View ..." sharedState
-          in
           Admin.view sharedState
           |> Tuple.mapSecond (Html.map AdminMsg)
           |> Tuple.mapSecond (Html.map toMsg)
