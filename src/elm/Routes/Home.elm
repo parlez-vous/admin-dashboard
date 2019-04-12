@@ -291,13 +291,13 @@ view user model =
 
 
     html =
-      div []
+      div [ class "home-page" ]
         [ div [ class "navbar" ] ctaButtons
         , div [ class "container" ]
             [ div [ class "row" ]
                 [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
                 , pre [ class "center-text" ] [ text "work in progress" ]
-                , div [ class "logo-container" ] [ logo ]
+                , div [ class "logo-container" ] [ logo "125" ]
                 , p [ class "center-text" ] [ text "The fastest way to engage your audience" ]
                 , form_ model
                 ]

@@ -2,55 +2,114 @@
 @import skeleton
 
 
+html, body
+  height: 100%
+
+  > *
+    height: 100%
+
+  
 /**
  *  
  *   SHARED UI
  **
+.vertical-nav-container
+    display: grid
+    grid-template-columns: 20vw 80vw
+    grid-template-rows: auto
+    grid-template-areas: "nav content"
 
-.navbar
-  margin-top: 2em
-  margin-right: 2em
-  display: flex
-  justify-content: flex-end
-  > button:first-child
-    margin-right: 2em
 
+.vertical-navbar
+  grid-area: nav
+  padding-top: 17%
+
+  position: relative
+
+  > *
+    width: 75%
+    margin-right: auto
+    margin-left: auto
+    padding-right: 20%
+    padding-left: 20%
+    
+  // .nav-primary-content
+    // align-self: auto
+
+  .nav-secondary-content
+    height: 30%
+    position: absolute
+    bottom: 5%
+
+    display: flex
+    flex-direction: column
+    justify-content: flex-end
+
+    .user-container
+      margin-top: 15%
+
+  
+.content
+  grid-area: content
+
+
+  
 /**
  *  
  *   Home.elm styles
  **
 
-.logo-container
-  padding-top: 1em
-
-.center-text
-  text-align: center
-
-.logo-container > *
-  display: block
-  margin-right: auto
-  margin-left: auto
-  margin-bottom: 1em
-
-.slogan
-  margin-top: .5em
-
-.custom-form
-  width: 50%
-  margin-top: 2.5em
-  margin-left: auto
-  margin-right: auto
-
-  > *
-    width: 100%
-    
-  .url-info
+.home-page
+  .navbar
+    margin-top: 2em
+    margin-right: 2em
     display: flex
-    justify-content: left
-    
-    >
-      *
-        margin: 0
-        margin-bottom: .5em
-      span
-        margin-right: .5em
+    justify-content: flex-end
+
+    > button:first-child
+      margin-right: 2em
+
+  .logo-container
+    padding-top: 1em
+
+  .center-text
+    text-align: center
+
+  .logo-container > *
+    display: block
+    margin-right: auto
+    margin-left: auto
+    margin-bottom: 1em
+
+  .slogan
+    margin-top: .5em
+
+  .custom-form
+    width: 50%
+    margin-top: 2.5em
+    margin-left: auto
+    margin-right: auto
+
+    > *
+      width: 100%
+      
+    .url-info
+      display: flex
+      justify-content: left
+      
+      >
+        *
+          margin: 0
+          margin-bottom: .5em
+        span
+          margin-right: .5em
+
+
+
+/**
+  Admin.elm
+ **/
+
+// .admin-page
+
+  

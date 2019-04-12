@@ -10,6 +10,8 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
 import Api.Deserialize as Api
+import Logo exposing (logo)
+import Icons exposing (bell, user)
 import Session
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Utils exposing (logout)
@@ -39,11 +41,26 @@ view admin =
     welcomeMsg = "Hello " ++ admin.username ++ "!"
 
     html =
-      div [ class "admin-page" ]
-        [ nav [ class "navbar" ]
-            [ button [ onClick LogOut ] [ text "Log Out" ] ]
-        , h1 [] [ text "Admin Panel" ]
-        , div [] [ text welcomeMsg ]
+      div [ class "admin-page vertical-nav-container" ]
+
+        -- Vertical Nav
+        [ nav [ class "vertical-navbar" ]
+            [ div [ class "logo-container" ] [ logo "50" ]
+            , div [ class "nav-primary-content"] [  ]
+            
+            , div [ class "nav-secondary-content" ]
+                [ bell
+                , div [ class "user-container" ] [ user ] 
+                ] 
+
+            , button [ onClick LogOut ] [ text "Log Out" ]
+            ]
+
+        -- Content
+        , div [ class "content" ]
+          [ h1 [] [ text "Admin Panel" ]
+          , div [] [ text welcomeMsg ]
+          ]
         ]
 
   in 

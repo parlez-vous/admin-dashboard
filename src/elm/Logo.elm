@@ -3,9 +3,9 @@ module Logo exposing (logo)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 
-logo =
+logo width_ =
   svg [ version "1.1"
-    , width "125"
+    , width width_
     , viewBox "0 0 142.0155029296875 131.010986328125"
     ]
     [ g [] 
