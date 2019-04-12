@@ -1,8 +1,6 @@
 'use strict';
 
-require('./css/normalize.css')
-require('./css/skeleton.css')
-require('./css/custom.css')
+require('./css/custom.sass')
 
 const Elm = require('./elm/Main.elm').Elm;
 

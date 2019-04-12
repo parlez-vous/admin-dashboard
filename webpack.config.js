@@ -7,6 +7,12 @@ const mode = process.env.NODE_ENV === 'production'
   ? 'production'
   : 'development'
 
+
+const commonCssLoaders = [
+  'style-loader',
+  'css-loader',
+]
+  
 module.exports = {
   mode,
   
@@ -25,9 +31,13 @@ module.exports = {
     rules: [
       {
         test: /\.(css|scss)$/,
+        use: commonCssLoaders,
+      },
+      {
+        test: /\.sass$/,
         use: [
-          'style-loader',
-          'css-loader',
+          ...commonCssLoaders,
+          'sass-loader'
         ]
       },
       {
