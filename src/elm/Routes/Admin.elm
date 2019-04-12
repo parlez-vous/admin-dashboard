@@ -37,7 +37,8 @@ type alias Title = String
 view : Api.Admin -> (Title, Html Msg)
 view admin = 
   let
-    welcomeMsg = "Hello " ++ admin.username ++ "!"
+    welcomeMsg = "Hello " ++ admin.username ++ "! Looks like you haven't registered any sites yet."
+
 
     html =
       div [ class "admin-page vertical-nav-container" ]
@@ -51,14 +52,18 @@ view admin =
                 [ bell
                 , div [ class "user-container" ] [ user ] 
                 ] 
-
-            , button [ onClick LogOut ] [ text "Log Out" ]
             ]
 
         -- Content
         , div [ class "content" ]
-          [ h1 [] [ text "Admin Panel" ]
+          [ h1 [] [ text "Websites" ]
           , div [] [ text welcomeMsg ]
+          , input
+              [ type_ "text"
+              , class "site-input"
+              , placeholder "enter a website ..."
+              ] []
+          , button [ class "logout", onClick LogOut ] [ text "Log Out" ]
           ]
         ]
 
