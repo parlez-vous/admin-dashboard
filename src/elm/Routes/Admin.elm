@@ -10,8 +10,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
 import Api.Deserialize as Api
-import Logo exposing (logo)
-import Icons exposing (bell, user)
+import Icons exposing (bell, logo, user)
 import Session
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Utils exposing (logout)
