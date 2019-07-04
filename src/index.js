@@ -6,7 +6,7 @@ const Elm = require('./elm/Main.elm').Elm;
 
 const storagekey = '@pv/token'
 
-const api = process.env.API || 'http://staging.api.parlez-vous.io/admins'
+const api = process.env.API || 'https://parlez-vous-web.appspot.com'
 
 const token = localStorage.getItem(storagekey)
 
