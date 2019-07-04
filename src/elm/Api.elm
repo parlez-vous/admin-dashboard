@@ -26,6 +26,11 @@ type Method
   | Post
 
 
+
+adminPath : String
+adminPath = "/admins"
+
+
 secureRequestFactory : Method -> Input.SessionToken -> RequestTemplate
 secureRequestFactory method token =
   let
@@ -127,7 +132,7 @@ adminSignin api toMsg data =
     Http.post
       { body = body
       , expect = expect
-      , url = api ++ "/signin"
+      , url = api ++ adminPath ++ "/signin"
       }
     
 
@@ -143,7 +148,7 @@ getAdminSession token api toMsg =
 
   in
     secureGet
-      (api ++ "/profile")
+      (api ++ adminPath ++ "/profile")
       token 
       expect
 
