@@ -37,8 +37,9 @@ type alias Model =
   }
 -}
 type alias Model =
-  { homeModel : Home.Model
-  , route     : Route
+  { homeModel  : Home.Model
+  , adminModel : Admin.Model
+  , route      : Route
   }
 
 type Route
@@ -78,6 +79,7 @@ init url navKey session =
 
   in
   ( { homeModel = Home.init
+    , adminModel = Admin.init
     , route     = route
     }
   , cmd
@@ -108,9 +110,12 @@ update state msg model =
 
     AdminMsg adminMsg ->
       let
-        ( adminCmd, sharedStateUpdate ) = Admin.update state adminMsg
+        ( adminModel, adminCmd, sharedStateUpdate ) =
+          Admin.update state adminMsg model.adminModel
       in
-      ( model
+      ( { model
+          | adminModel = adminModel
+        }
       , Cmd.map AdminMsg adminCmd
       , sharedStateUpdate
       )
@@ -136,7 +141,7 @@ view toMsg sharedState routerModel =
               )
             
             Session.Admin ( admin, _ ) -> 
-              Admin.view admin
+              Admin.view admin routerModel.adminModel
               |> Tuple.mapSecond (Html.map AdminMsg)
               |> Tuple.mapSecond (Html.map toMsg)
 

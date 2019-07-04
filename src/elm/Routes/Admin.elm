@@ -1,5 +1,7 @@
 module Routes.Admin exposing
-  ( Msg
+  ( Model
+  , Msg
+  , init
   , update
   , view
   )
@@ -7,7 +9,8 @@ module Routes.Admin exposing
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
+import Url
 
 import Api.Deserialize as Api
 import Icons exposing (bell, logo, user)
@@ -16,29 +19,58 @@ import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Utils exposing (logout)
 
 
-type Msg = LogOut
+-- MODEL
+
+type alias Model =
+  { validHostName : Bool
+  }
+
+
+type Msg
+  = LogOut
+  | SiteInput String
 
 
 
-update : SharedState -> Msg -> ( Cmd msg, SharedStateUpdate )
-update state _ =
-  let
-    ( logOutCmd, sharedStateUpdate ) = logout
 
-  in
-    ( Cmd.batch [ logOutCmd, Nav.pushUrl state.navKey "/" ]
-    , sharedStateUpdate
-    )
+init : Model
+init = { validHostName = False }
+
+
+update : SharedState -> Msg -> Model -> ( Model, Cmd msg, SharedStateUpdate )
+update state msg model =
+  case msg of
+    LogOut ->
+      let
+        ( logOutCmd, sharedStateUpdate ) = logout
+
+      in
+        ( model
+        , Cmd.batch [ logOutCmd, Nav.pushUrl state.navKey "/" ]
+        , sharedStateUpdate
+        )
+
+    SiteInput rawDomain ->
+      let
+        withProtocol = "https://" ++ rawDomain
+
+        validHostName = case Url.fromString withProtocol of
+          Nothing -> False
+          Just _ -> True
+
+        newModel = { model | validHostName = validHostName }
+      in
+        ( newModel, Cmd.none, NoUpdate )
+
 
 
 
 type alias Title = String
 
-view : Api.Admin -> (Title, Html Msg)
-view admin = 
+view : Api.Admin -> Model -> (Title, Html Msg)
+view admin model = 
   let
     welcomeMsg = "Hello " ++ admin.username ++ "! Looks like you haven't registered any sites yet."
-
 
     html =
       div [ class "admin-page vertical-nav-container" ]
@@ -61,8 +93,11 @@ view admin =
           , input
               [ type_ "text"
               , class "site-input"
-              , placeholder "enter a website ..."
+              , placeholder "enter a domain name ..."
+              , onInput SiteInput
               ] []
+          , button [ class "submit", disabled <| not model.validHostName ]
+              [ text "submit" ]
           , button [ class "logout", onClick LogOut ] [ text "Log Out" ]
           ]
         ]
