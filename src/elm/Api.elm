@@ -2,6 +2,7 @@ module Api exposing
   ( adminSignup
   , adminSignin
   , getAdminSession
+  , registerSite
   )
 
 import Http
@@ -152,3 +153,31 @@ getAdminSession token api toMsg =
       token 
       expect
 
+
+registerSite : 
+  Input.SessionToken -> 
+  String -> 
+  ToMsg Input.Site msg -> 
+  Output.RegisterSite ->
+  Cmd msg
+registerSite token api toMsg data =
+  let
+    siteJson =
+      E.object
+        [ ( "hostname", E.string data.hostname )
+        ]
+    
+    body = Http.jsonBody siteJson
+
+    expect =
+      Http.expectJson
+      toMsg
+      (D.field "data" Input.registerSiteDecoder)
+
+  in
+    securePost 
+      (api ++ adminPath ++ "/sites/register")
+      token
+      body
+      expect
+    

@@ -5,6 +5,7 @@
 module Api.Output exposing 
   ( Signup
   , Signin
+  , RegisterSite
   )
 
 
@@ -19,3 +20,7 @@ type alias Signin =
   , password : String
   }
 
+
+type alias RegisterSite =
+  { hostname : String
+  }
