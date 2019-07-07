@@ -183,9 +183,6 @@ view : Model -> Browser.Document Msg
 view model =
   case model.state of
     Ready sharedState routeModel ->
-      let
-        _ = Debug.log "SHARED STATE" sharedState
-      in  
       Router.view RouterMsg sharedState routeModel
 
     _ ->
