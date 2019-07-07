@@ -6,7 +6,7 @@ module Api exposing
 
 import Http
 import Json.Encode as E
-import Json.Decode as D exposing (Decoder)
+import Json.Decode as D
 
 import Api.Deserialize as Input
 import Api.Output as Output
