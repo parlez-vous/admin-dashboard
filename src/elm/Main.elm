@@ -69,6 +69,7 @@ init flags url key =
         ( NotReady key t flags.api
         , Api.getAdminSession t flags.api <| SessionVerified t key
         )
+
       Nothing ->
         let
           ( routerModel, routerMsg ) = Router.init url key Session.Guest
