@@ -23,10 +23,10 @@ config = Toasty.config
 
 view : (Toasty.Msg String -> msg) -> ToastState -> Html msg
 view toMsg toastStack =
-  div [ class "toasts" ]
+  div [ class "toast__container" ]
     [ Toasty.view config renderToast toMsg toastStack ]
     
 
 renderToast : String -> Html msg
 renderToast toast =
-  div [] [ text toast ]
+  div [ class "toast__item" ] [ text toast ]
