@@ -9,17 +9,20 @@ module SharedState exposing
 import Browser.Navigation
 
 import Session
+import UI.Toast as Toast
 
 
 type SharedStateUpdate
   = NoUpdate
   | UpdateSession Session.User
+  | UpdateToasts (Toast.ToastState)
 
 
 type alias SharedState =
   { navKey  : Browser.Navigation.Key
   , session : Session.User
   , api     : String
+  , toasts  : Toast.ToastState
   }
 
 
@@ -28,6 +31,7 @@ init key session api =
   { navKey  = key
   , session = session
   , api     = api
+  , toasts  = Toast.init
   }
 
 
@@ -40,5 +44,8 @@ update updateMsg state =
       in
       { state | session = session }
   
+    UpdateToasts newToastState ->
+      { state | toasts = newToastState }
+    
     NoUpdate ->
       state

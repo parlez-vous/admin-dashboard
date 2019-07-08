@@ -12,6 +12,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Url
+import Toasty
 
 import Api
 import Api.Output as Output
@@ -21,6 +22,7 @@ import Session
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Utils exposing (logout)
 import UI.Button as U
+import UI.Toast as Toast
 
 
 -- MODEL
@@ -36,6 +38,7 @@ type Msg
   | SiteInput String
   | SubmitDomain String
   | DomainSubmitted (Result Http.Error Input.Site)
+  | ToastMsg (Toasty.Msg String)
 
 
 
@@ -93,9 +96,11 @@ update state msg model =
     ( Session.Admin ( admin, token ), SubmitDomain rawDomain ) ->
       if not model.validHostName
       then
-        -- need snackbars
-        -- https://package.elm-lang.org/packages/pablen/toasty/latest
-        ( model, Cmd.none, NoUpdate )
+        let
+          ( m, c ) = ( { toasties = state.toasts }, Cmd.none )
+            |> Toasty.addToast Toast.config ToastMsg "Invalid URL"
+        in
+        ( model, c, UpdateToasts m.toasties )
       else
         let
           _ = Debug.log "Submitting domain ..." rawDomain
@@ -122,6 +127,15 @@ update state msg model =
             _ = Debug.log "Failed to register site: " e
           in
             ( model, Cmd.none, NoUpdate )
+    
+    ( _, ToastMsg toastyMsg ) ->
+      let
+        toastieModel = { toasties = state.toasts }
+
+        ({ toasties }, _ ) = Toasty.update Toast.config ToastMsg toastyMsg toastieModel
+      in
+        ( model, Cmd.none, NoUpdate )
+      
       
 
 
@@ -130,8 +144,8 @@ update state msg model =
 
 type alias Title = String
 
-view : Input.Admin -> Model -> (Title, Html Msg)
-view admin model = 
+view : SharedState -> Input.Admin -> Model -> (Title, Html Msg)
+view sharedState admin model = 
   let
     welcomeMsg = "Hello " ++ admin.username ++ "! Looks like you haven't registered any sites yet."
 
@@ -166,6 +180,8 @@ view admin model =
           , U.toHtml submitBtn
           , button [ class "logout", onClick LogOut ] [ text "Log Out" ]
           ]
+
+        , Toast.view ToastMsg sharedState.toasts
         ]
 
   in 

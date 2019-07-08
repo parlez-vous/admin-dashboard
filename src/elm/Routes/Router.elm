@@ -141,7 +141,7 @@ view toMsg sharedState routerModel =
               )
             
             Session.Admin ( admin, _ ) -> 
-              Admin.view admin routerModel.adminModel
+              Admin.view sharedState admin routerModel.adminModel
               |> Tuple.mapSecond (Html.map AdminMsg)
               |> Tuple.mapSecond (Html.map toMsg)
 
