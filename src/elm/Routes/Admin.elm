@@ -19,7 +19,7 @@ import RemoteData exposing (WebData)
 import Api
 import Api.Output as Output
 import Api.Deserialize as Input
-import Icons exposing (bell, logo, user)
+import Icons exposing (bell, logo, user, cog)
 import Session
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Utils exposing (logout)
@@ -167,6 +167,25 @@ update state msg model =
 
 type alias Title = String
 
+viewSite : Input.Site -> Html Msg
+viewSite site =
+  let
+    status = if site.verified
+      then "Verified"
+      else "Not Verified :("
+
+  in
+    div [ class "site-container" ]
+      [ header [ class "site-details" ]
+          [ h2 [] [ text site.hostname ]
+          
+          -- This is a placeholder for what I imagine
+          -- to be site details
+          , p [] [ text "No data to display" ]
+          ]
+      , div [ class "site-status" ]
+          [ text status ]
+      ]
 
 
 view : SharedState -> Input.Admin -> Model -> (Title, Html Msg)
@@ -185,6 +204,12 @@ view sharedState admin model =
       case model.sites of
         RemoteData.NotAsked -> loading
         RemoteData.Loading  -> loading
+        RemoteData.Success sites ->
+          div []
+            [ text <| "You have " ++ (String.fromInt <| List.length sites) ++ " sites!"
+            , div [] <| List.map viewSite sites
+            ]
+
           
           
         _ ->
@@ -212,7 +237,8 @@ view sharedState admin model =
           , div [ class "nav-secondary-content" ]
               [ bell
               , div [ class "user-container" ] [ user ] 
-              ] 
+              , cog
+              ]
           ]
 
         -- Content
