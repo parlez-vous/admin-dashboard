@@ -30,6 +30,7 @@ import UI.Toast as Toast
 type alias Model =
   { validHostName : Bool
   , hostname : String
+  , toasties : Toast.ToastState
   }
 
 
@@ -46,6 +47,7 @@ init : Model
 init =
   { validHostName = False
   , hostname = ""
+  , toasties = Toast.init
   }
 
 
@@ -97,10 +99,10 @@ update state msg model =
       if not model.validHostName
       then
         let
-          ( m, c ) = ( { toasties = state.toasts }, Cmd.none )
+          ( m, c ) = ( model, Cmd.none )
             |> Toasty.addToast Toast.config ToastMsg "Invalid URL"
         in
-        ( model, c, UpdateToasts m.toasties )
+        ( m, c, NoUpdate )
       else
         let
           _ = Debug.log "Submitting domain ..." rawDomain
@@ -128,13 +130,20 @@ update state msg model =
           in
             ( model, Cmd.none, NoUpdate )
     
-    ( _, ToastMsg toastyMsg ) ->
+    -- this gets triggered __some__time__
+    -- after a toast gets added to the stack
+    -- via `addToast`
+    ( _, ToastMsg subMsg ) ->
       let
-        toastieModel = { toasties = state.toasts }
+        ( m , cmd ) =
+          model
+          |> Toasty.update Toast.config ToastMsg subMsg
 
-        ({ toasties }, _ ) = Toasty.update Toast.config ToastMsg toastyMsg toastieModel
       in
-        ( model, Cmd.none, NoUpdate )
+        ( m
+        , cmd
+        , NoUpdate
+        )
       
       
 
@@ -181,7 +190,7 @@ view sharedState admin model =
           , button [ class "logout", onClick LogOut ] [ text "Log Out" ]
           ]
 
-        , Toast.view ToastMsg sharedState.toasts
+        , Toast.view ToastMsg model.toasties
         ]
 
   in 
