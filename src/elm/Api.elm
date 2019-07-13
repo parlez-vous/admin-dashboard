@@ -2,12 +2,14 @@ module Api exposing
   ( adminSignup
   , adminSignin
   , getAdminSession
+  , getSites
   , registerSite
   )
 
 import Http
 import Json.Encode as E
 import Json.Decode as D
+import RemoteData
 
 import Api.Deserialize as Input
 import Api.Output as Output
@@ -154,6 +156,25 @@ getAdminSession token api toMsg =
       expect
 
 
+
+getSites :
+  Input.SessionToken ->
+  String ->
+  (RemoteData.WebData Input.Sites -> msg) -> 
+  Cmd msg
+getSites token api toMsg =
+  let
+    sitesDecoder = D.field "data" (D.list Input.siteDecoder)
+
+    expect = (Http.expectJson (RemoteData.fromResult >> toMsg) sitesDecoder)
+  in
+    secureGet
+      (api ++ adminPath ++ "/sites")
+      token
+      expect  
+
+
+
 registerSite : 
   Input.SessionToken -> 
   String -> 
@@ -172,7 +193,7 @@ registerSite token api toMsg data =
     expect =
       Http.expectJson
       toMsg
-      (D.field "data" Input.registerSiteDecoder)
+      (D.field "data" Input.siteDecoder)
 
   in
     securePost 

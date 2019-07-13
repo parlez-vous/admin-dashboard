@@ -2,6 +2,7 @@ module Routes.Admin exposing
   ( Model
   , Msg
   , init
+  , initCmd
   , update
   , view
   )
@@ -13,6 +14,7 @@ import Html.Events exposing (onClick, onInput)
 import Http
 import Url
 import Toasty
+import RemoteData exposing (WebData)
 
 import Api
 import Api.Output as Output
@@ -22,14 +24,18 @@ import Session
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Utils exposing (logout)
 import UI.Button as U
+import UI.Loader as Loader
 import UI.Toast as Toast
 
 
 -- MODEL
 
+type alias Sites = List Input.Site
+
 type alias Model =
   { hostname : String
   , toasties : Toast.ToastState
+  , sites : WebData Sites
   }
 
 
@@ -39,6 +45,7 @@ type Msg
   | SubmitDomain String
   | DomainSubmitted (Result Http.Error Input.Site)
   | ToastMsg (Toasty.Msg String)
+  | SitesResponse (WebData Sites)
 
 
 
@@ -46,7 +53,12 @@ init : Model
 init =
   { hostname = ""
   , toasties = Toast.init
+  , sites = RemoteData.NotAsked
   }
+
+
+initCmd : Input.SessionToken -> String -> Cmd Msg
+initCmd token api = Api.getSites token api SitesResponse
 
 
 isValidHostname : String -> Bool
@@ -140,6 +152,12 @@ update state msg model =
         , cmd
         , NoUpdate
         )
+    
+    ( _, SitesResponse response ) ->
+      ( { model | sites = response}
+      , Cmd.none
+      , NoUpdate
+      )
       
       
 
@@ -149,6 +167,8 @@ update state msg model =
 
 type alias Title = String
 
+
+
 view : SharedState -> Input.Admin -> Model -> (Title, Html Msg)
 view sharedState admin model = 
   let
@@ -156,6 +176,30 @@ view sharedState admin model =
 
     submitBtn = 
       U.button (SubmitDomain model.hostname) "Submit"
+
+    loading =
+      div [ class "loading-container" ]
+        [ Loader.donut ]
+
+    content =
+      case model.sites of
+        RemoteData.NotAsked -> loading
+        RemoteData.Loading  -> loading
+          
+          
+        _ ->
+          div []
+            [ text welcomeMsg
+            , input
+                [ type_ "text"
+                , class "site-input"
+                , placeholder "enter a domain name ..."
+                , onInput SiteInput
+                , value model.hostname
+                ] []
+            , U.toHtml submitBtn
+            ]
+            
 
     html =
       div [ class "admin-page vertical-nav-container" ]
@@ -174,15 +218,7 @@ view sharedState admin model =
         -- Content
         , div [ class "content" ]
           [ h1 [] [ text "Websites" ]
-          , div [] [ text welcomeMsg ]
-          , input
-              [ type_ "text"
-              , class "site-input"
-              , placeholder "enter a domain name ..."
-              , onInput SiteInput
-              , value model.hostname
-              ] []
-          , U.toHtml submitBtn
+          , content
           , button [ class "logout", onClick LogOut ] [ text "Log Out" ]
           ]
 

@@ -65,8 +65,8 @@ fromUrl : Url -> Route
 fromUrl = Maybe.withDefault NotFound << Parser.parse parser
 
 
-init : Url -> Nav.Key -> Session.User -> ( Model, Cmd msg )
-init url navKey session =
+init : String -> Url -> Nav.Key -> Session.User -> ( Model, Cmd Msg )
+init api url navKey session =
   let
     route = fromUrl url
 
@@ -74,6 +74,10 @@ init url navKey session =
       case ( session, route ) of
         -- If guest visits a private route, redirect them to the home page
         ( Session.Guest, Admin ) -> Nav.pushUrl navKey "/"
+
+        ( Session.Admin ( admin, token ), Admin ) ->
+          Admin.initCmd token api
+          |> Cmd.map AdminMsg
 
         _ -> Cmd.none
 

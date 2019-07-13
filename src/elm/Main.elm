@@ -72,13 +72,13 @@ init flags url key =
 
       Nothing ->
         let
-          ( routerModel, routerMsg ) = Router.init url key Session.Guest
+          ( routerModel, routerCmd ) = Router.init flags.api url key Session.Guest
 
         in
         ( Ready
             (SharedState.init key Session.Guest flags.api)
             routerModel
-        , routerMsg
+        , Cmd.map RouterMsg routerCmd
         )
 
   in
@@ -120,7 +120,7 @@ update msg model =
           let
             adminSession = Session.Admin (admin, token)
 
-            ( routerModel, routerCmd ) = Router.init model.url key adminSession
+            ( routerModel, routerCmd ) = Router.init api model.url key adminSession
           
             sharedState =
               SharedState.init key adminSession api
@@ -129,14 +129,14 @@ update msg model =
           ( { model
               | state = Ready sharedState routerModel
             }
-          , routerCmd
+          , Cmd.map RouterMsg routerCmd
           )
 
         Err e ->
           let
             _ = (Debug.log "Error while verifying session" e)
 
-            ( routerModel, routerCmd ) = Router.init model.url key Session.Guest
+            ( routerModel, routerCmd ) = Router.init api model.url key Session.Guest
 
             sharedState =
               SharedState.init key Session.Guest api
@@ -145,7 +145,7 @@ update msg model =
             ( { model
                 | state = Ready sharedState routerModel
               }
-            , routerCmd
+            , Cmd.map RouterMsg routerCmd
             )
 
               
