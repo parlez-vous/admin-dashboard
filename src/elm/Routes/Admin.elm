@@ -28,8 +28,7 @@ import UI.Toast as Toast
 -- MODEL
 
 type alias Model =
-  { validHostName : Bool
-  , hostname : String
+  { hostname : String
   , toasties : Toast.ToastState
   }
 
@@ -45,8 +44,7 @@ type Msg
 
 init : Model
 init =
-  { validHostName = False
-  , hostname = ""
+  { hostname = ""
   , toasties = Toast.init
   }
 
@@ -87,16 +85,14 @@ update state msg model =
         )
 
     ( Session.Admin _, SiteInput rawDomain ) ->
-      ( { model |
-            validHostName = isValidHostname rawDomain,
-            hostname = rawDomain
+      ( { model | hostname = rawDomain
         }
       , Cmd.none
       , NoUpdate
       )
         
     ( Session.Admin ( admin, token ), SubmitDomain rawDomain ) ->
-      if not model.validHostName
+      if not (isValidHostname rawDomain)
       then
         let
           ( m, c ) = ( model, Cmd.none )
