@@ -15,3 +15,20 @@
 
   &.disabled
     background-color: black
+
+
+.toast__container
+  position: fixed
+  top: 5%
+  left: 45%
+
+  & > ol
+    list-style-type: none
+    display: flex
+    flex-direction: column-reverse
+
+  .toast__item
+    padding: 1em 1.3em
+    background-color: $primary-color
+    color: white
+    border-radius: 3px
