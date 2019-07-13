@@ -1,9 +1,10 @@
 module Api.Deserialize exposing
   ( Admin
   , Site
+  , Sites
   , adminDecoder
   , adminAndTokenDecoder
-  , registerSiteDecoder
+  , siteDecoder
   , SessionToken
   , AdminWithToken
   )
@@ -44,6 +45,7 @@ type alias Site =
   }
 
 
+type alias Sites = List Site
 
 type alias AdminWithToken = (Admin, SessionToken)
 
@@ -66,8 +68,8 @@ adminAndTokenDecoder =
 
 
 
-registerSiteDecoder : Decoder Site
-registerSiteDecoder =
+siteDecoder : Decoder Site
+siteDecoder =
   D.map7 Site
     (D.field "id" D.int)
     (D.field "hostname" D.string)
