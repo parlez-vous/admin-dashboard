@@ -11,7 +11,7 @@ import Html as Html exposing (..)
 import Browser
 import Browser.Navigation as Nav
 import Url exposing (Url)
-import Url.Parser as Parser exposing (Parser, oneOf, s, string)
+import Url.Parser as Parser exposing (Parser, oneOf, s, string, int, (</>))
 
 
 
@@ -45,6 +45,7 @@ type alias Model =
 type Route
   = Home
   | Admin
+  | Site Int
   | NotFound
 
 
@@ -59,6 +60,7 @@ parser =
   oneOf
     [ Parser.map Home Parser.top
     , Parser.map Admin (s "admin")
+    , Parser.map Site (s "sites" </> int)
     ]
 
 fromUrl : Url -> Route
@@ -148,6 +150,11 @@ view toMsg sharedState routerModel =
               Admin.view sharedState admin routerModel.adminModel
               |> Tuple.mapSecond (Html.map AdminMsg)
               |> Tuple.mapSecond (Html.map toMsg)
+
+        Site siteId ->
+          ( "Site: " ++ (String.fromInt siteId)
+          , div [ ] [ text "yey" ]
+          )
 
         NotFound ->
           ( "Woops!", div [] [ text "404 Not Found"] )
