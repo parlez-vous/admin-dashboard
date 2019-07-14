@@ -185,27 +185,27 @@ update msg model =
 
 updateRouter : Router.Msg -> Model -> ( Model, Cmd Msg )
 updateRouter routerMsg model =
-    case model.state of
-        Ready sharedState routerModel ->
-            let
-                ( nextRouterModel, routerCmd, sharedStateUpdate ) =
-                    Router.update sharedState routerMsg routerModel
+  case model.state of
+    Ready sharedState routerModel ->
+      let
+        ( nextRouterModel, routerCmd, sharedStateUpdate ) =
+          Router.update sharedState routerMsg routerModel
 
-                nextSharedState =
-                    SharedState.update sharedStateUpdate sharedState
+        nextSharedState =
+          SharedState.update sharedStateUpdate sharedState
 
-            in
-            ( { model | state = Ready nextSharedState nextRouterModel }
-            , Cmd.map RouterMsg routerCmd
-            )
+      in
+      ( { model | state = Ready nextSharedState nextRouterModel }
+      , Cmd.map RouterMsg routerCmd
+      )
 
-        _ ->
-            let
-                _ =
-                    Debug.log "We got a router message even though the app is not ready?"
-                        routerMsg
-            in
-            ( model, Cmd.none )
+    _ ->
+      let
+        _ =
+          Debug.log "We got a router message even though the app is not ready?"
+              routerMsg
+      in
+      ( model, Cmd.none )
 
 
 
