@@ -231,15 +231,15 @@ view sharedState admin model =
 
         -- Vertical Nav
         [ nav [ class "vertical-navbar" ]
-          [ div [ class "logo-container" ] [ logo "50" ]
-          , div [ class "nav-primary-content"] [  ]
-          
-          , div [ class "nav-secondary-content" ]
-              [ bell
-              , div [ class "user-container" ] [ user ] 
-              , cog
-              ]
-          ]
+            [ div [ class "logo-container" ] [ logo "50" ]
+            , div [ class "nav-primary-content"] [  ]
+            
+            , div [ class "nav-secondary-content" ]
+                [ bell
+                , div [ class "user-container" ] [ user ] 
+                , cog
+                ]
+            ]
 
         -- Content
         , div [ class "content" ]
