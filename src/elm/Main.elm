@@ -22,6 +22,23 @@ type alias Model =
   , url   : Url.Url
   }
 
+
+{--
+TODO: refactor
+https://github.com/parlez-vous/site/issues/4
+
+Ready means one of two things:
+ - We have a token stored locally AND we have _tried_ to
+   get the user's info with the given token
+
+ - There is no stoken stored locally. Therefore we label
+   the user as a guest
+
+
+NotReady means one thing:
+ - There is a token stored locally AND we have NOT yet
+   tried to get the user's info with the given token
+--}
 type AppState
   = Ready SharedState Router.Model
   | NotReady Nav.Key Input.SessionToken String
