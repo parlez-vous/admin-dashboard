@@ -1,4 +1,4 @@
-module Icons exposing
+module UI.Icons exposing
   ( logo
   , bell
   , cog

@@ -19,10 +19,10 @@ import RemoteData exposing (WebData)
 import Api
 import Api.Output as Output
 import Api.Deserialize as Input
-import Icons exposing (bell, logo, user, cog)
 import Session
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Utils exposing (logout)
+import UI.Icons exposing (bell, logo, user, cog)
 import UI.Button as U
 import UI.Loader as Loader
 import UI.Toast as Toast

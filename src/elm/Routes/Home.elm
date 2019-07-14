@@ -16,7 +16,7 @@ import Http
 import Api
 import Api.Output as Output
 import Api.Deserialize as Input
-import Icons exposing (logo)
+import UI.Icons exposing (logo)
 import Utils exposing (logout)
 import Session
 import SharedState exposing (SharedState, SharedStateUpdate)
