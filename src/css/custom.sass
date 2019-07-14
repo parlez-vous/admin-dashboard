@@ -2,6 +2,15 @@
 @import skeleton
 @import ui
 
+
+// https://www.paulirish.com/2012/box-sizing-border-box-ftw/
+html
+  box-sizing: border-box
+
+*, *:before, *:after
+  box-sizing: inherit
+
+
 html, body
   height: 100%
 
@@ -14,17 +23,18 @@ html, body
  *   SHARED UI
  **
 .vertical-nav-container
-    display: grid
-    grid-template-columns: 20vw 80vw
-    grid-template-rows: auto
-    grid-template-areas: "nav content"
-
+  height: 100%
+  display: flex
+  justify-content: space-between
 
 .vertical-navbar
-  grid-area: nav
-  padding-top: 17%
+  padding-top: 3em
+  width: 15%
+  height: 100%
+  box-shadow: 3px 0 3px 3px #8080802e
 
-  position: relative
+  position: sticky
+  top: 0
 
   > *
     width: 75%
@@ -50,8 +60,12 @@ html, body
 
   
 .content
-  grid-area: content
-  padding-top: 4%
+  padding-top: 3em
+  height: 100%
+  overflow-y: scroll
+  width: 80%
+  padding-left: 3em
+  padding-right: 3em
 
 
   
