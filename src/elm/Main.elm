@@ -13,7 +13,6 @@ import Api
 import Api.Deserialize as Input
 import SharedState exposing (SharedState)
 import Router
-import Routes.Admin as Admin
 import Session
 
 

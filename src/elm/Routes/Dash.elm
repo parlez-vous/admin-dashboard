@@ -1,4 +1,4 @@
-module Routes.Admin exposing
+module Routes.Dash exposing
   ( Model
   , Msg
   , init

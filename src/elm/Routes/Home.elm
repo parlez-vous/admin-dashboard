@@ -156,7 +156,7 @@ update sharedState msg model =
             commands =
               Cmd.batch
                 [ setToken <| Tuple.second adminWithToken
-                , Nav.pushUrl sharedState.navKey "/admin"
+                , Nav.pushUrl sharedState.navKey "/dash"
                 ]
           in
           ( FormHidden
@@ -172,7 +172,7 @@ update sharedState msg model =
 
     GoToDashboard ->
       ( model
-      , Nav.pushUrl sharedState.navKey "/admin"
+      , Nav.pushUrl sharedState.navKey "/dash"
       , SharedState.NoUpdate
       )
 

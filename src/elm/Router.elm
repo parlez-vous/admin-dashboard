@@ -16,7 +16,7 @@ import Url.Parser as Parser exposing (Parser, oneOf, s, string, int, (</>))
 
 
 import Routes.Home as Home
-import Routes.Admin as Admin 
+import Routes.Dash as Dash 
 import Session
 import SharedState exposing (SharedState, SharedStateUpdate)
 
@@ -38,13 +38,13 @@ type alias Model =
 -}
 type alias Model =
   { homeModel  : Home.Model
-  , adminModel : Admin.Model
+  , dashModel  : Dash.Model
   , route      : Route
   }
 
 type Route
   = Home
-  | Admin
+  | Dash
   | Site Int
   | NotFound
 
@@ -52,14 +52,14 @@ type Route
 type Msg
   = UrlChange Url
   | HomeMsg Home.Msg
-  | AdminMsg Admin.Msg
+  | DashMsg Dash.Msg
 
 
 parser : Parser (Route -> a) a
 parser =
   oneOf
     [ Parser.map Home Parser.top
-    , Parser.map Admin (s "admin")
+    , Parser.map Dash (s "dash")
     , Parser.map Site (s "sites" </> int)
     ]
 
@@ -75,17 +75,17 @@ init api url navKey session =
     cmd =
       case ( session, route ) of
         -- If guest visits a private route, redirect them to the home page
-        ( Session.Guest, Admin ) -> Nav.pushUrl navKey "/"
+        ( Session.Guest, Dash ) -> Nav.pushUrl navKey "/"
 
-        ( Session.Admin ( admin, token ), Admin ) ->
-          Admin.initCmd token api
-          |> Cmd.map AdminMsg
+        ( Session.Admin ( admin, token ), Dash ) ->
+          Dash.initCmd token api
+          |> Cmd.map DashMsg
 
         _ -> Cmd.none
 
   in
   ( { homeModel = Home.init
-    , adminModel = Admin.init
+    , dashModel = Dash.init
     , route     = route
     }
   , cmd
@@ -114,15 +114,15 @@ update state msg model =
         , sharedStateUpdate
         )
 
-    AdminMsg adminMsg ->
+    DashMsg dashMsg ->
       let
-        ( adminModel, adminCmd, sharedStateUpdate ) =
-          Admin.update state adminMsg model.adminModel
+        ( dashModel, dashCmd, sharedStateUpdate ) =
+          Dash.update state dashMsg model.dashModel
       in
       ( { model
-          | adminModel = adminModel
+          | dashModel = dashModel
         }
-      , Cmd.map AdminMsg adminCmd
+      , Cmd.map DashMsg dashCmd
       , sharedStateUpdate
       )
 
@@ -139,7 +139,7 @@ view toMsg sharedState routerModel =
           |> Tuple.mapSecond (Html.map toMsg)
           
 
-        Admin ->
+        Dash ->
           case sharedState.session of
             Session.Guest ->
               ( "Redirecting ..."
@@ -147,8 +147,8 @@ view toMsg sharedState routerModel =
               )
             
             Session.Admin ( admin, _ ) -> 
-              Admin.view sharedState admin routerModel.adminModel
-              |> Tuple.mapSecond (Html.map AdminMsg)
+              Dash.view sharedState admin routerModel.dashModel
+              |> Tuple.mapSecond (Html.map DashMsg)
               |> Tuple.mapSecond (Html.map toMsg)
 
         Site siteId ->
