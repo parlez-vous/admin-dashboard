@@ -170,6 +170,8 @@ type alias Title = String
 viewSite : Input.Site -> Html Msg
 viewSite site =
   let
+    link = "/sites/" ++ String.fromInt site.id
+
     status = if site.verified
       then "Verified"
       else "Not Verified :("
@@ -177,7 +179,7 @@ viewSite site =
   in
     div [ class "site-container" ]
       [ header [ class "site-details" ]
-          [ h2 [] [ text site.hostname ]
+          [ a [ href link ] [ h2 [] [ text site.hostname ] ]
           
           -- This is a placeholder for what I imagine
           -- to be site details

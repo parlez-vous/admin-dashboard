@@ -104,8 +104,27 @@ update msg model =
     UrlChanged url ->
       updateRouter (Router.UrlChange url) { model | url = url }
 
-    LinkClicked _ ->
-      (Debug.log "link clicked" model, Cmd.none)
+    LinkClicked urlRequest ->
+      case urlRequest of
+        Browser.Internal url ->
+          let
+            navKey = case model.state of
+              Ready sharedState _ ->
+                sharedState.navKey
+
+              NotReady navKey_ _ _ ->
+                navKey_
+
+          in
+          ( model
+          , Nav.pushUrl navKey <| Url.toString url
+          )
+          
+        -- leaving the app!
+        Browser.External urlStr ->
+          ( model
+          , Nav.load urlStr
+          )
 
     SessionVerified token key result ->
       let
