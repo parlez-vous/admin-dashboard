@@ -72,31 +72,18 @@ init api url navKey session =
   let
     route = fromUrl url
 
-    cmd =
-      case ( session, route ) of
-        -- If guest visits a private route, redirect them to the home page
-        ( Session.Guest, Dash ) -> Nav.pushUrl navKey "/"
-
-        ( _ , Dash ) ->
-          let
-            pseudoSharedState =
-              { session = session
-              , api = api
-              , navKey = navKey
-              }
-
-          in
-            Dash.initRoute pseudoSharedState
-            |> Cmd.map DashMsg
-
-        _ -> Cmd.none
+    pseudoSharedState =
+      { session = session
+      , api = api
+      , navKey = navKey
+      }
 
   in
   ( { homeModel = Home.init
     , dashModel = Dash.init
     , route     = route
     }
-  , cmd
+  , transitionTrigger route pseudoSharedState
   )
 
 
@@ -105,17 +92,16 @@ init api url navKey session =
 -- and initializations
 transitionTrigger : Route -> SharedState -> Cmd Msg
 transitionTrigger route state =
-  case route of
-    Dash -> Cmd.map DashMsg <| Dash.initRoute state
+  case ( route, state.session ) of
+    ( Dash, Session.Admin _ ) -> Cmd.map DashMsg <| Dash.initRoute state
+
+    -- If guest visits a private route, redirect them to the home page
+    ( Dash, Session.Guest ) -> Nav.pushUrl state.navKey "/"
+    ( Site _, Session.Guest ) -> Nav.pushUrl state.navKey "/"
 
     _ -> Cmd.none
 
--- trying to figure out where exactly should the
--- initCmd function be called for each specific route
 
--- initCmd might be the wrong term
--- need func that gets called every time the app transitions
--- into that page
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update state msg model =
   case msg of
