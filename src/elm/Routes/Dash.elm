@@ -2,7 +2,7 @@ module Routes.Dash exposing
   ( Model
   , Msg
   , init
-  , initCmd
+  , initRoute
   , update
   , view
   )
@@ -57,8 +57,16 @@ init =
   }
 
 
-initCmd : Input.SessionToken -> String -> Cmd Msg
-initCmd token api = Api.getSites token api SitesResponse
+-- gets called on every page load
+--
+-- TODO: store sites on shared state
+--   to prevent from loading data on every page load
+initRoute : SharedState -> Cmd Msg
+initRoute { session, api, navKey } =
+  -- https://github.com/parlez-vous/site/issues/5
+  case session of
+    Session.Guest -> Nav.pushUrl navKey "/"
+    Session.Admin ( _, token ) -> Api.getSites token api SitesResponse
 
 
 isValidHostname : String -> Bool
@@ -80,6 +88,7 @@ update state msg model =
     -- Context: a session of Session.Guest should never occur
     -- here since we manage redirection on private routes
     -- at src/elm/Routes/Router.elm
+    -- https://github.com/parlez-vous/site/issues/5
     ( Session.Guest, _ ) ->
       ( model
       , Nav.pushUrl state.navKey "/"
