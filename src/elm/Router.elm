@@ -11,7 +11,7 @@ import Html as Html exposing (..)
 import Browser
 import Browser.Navigation as Nav
 import Url exposing (Url)
-import Url.Parser as Parser exposing (Parser, oneOf, s, string, int, (</>))
+import Url.Parser as Parser exposing (Parser, oneOf, s, int, (</>))
 
 
 
@@ -77,7 +77,7 @@ init api url navKey session =
         -- If guest visits a private route, redirect them to the home page
         ( Session.Guest, Dash ) -> Nav.pushUrl navKey "/"
 
-        ( Session.Admin ( admin, token ), Dash ) ->
+        ( Session.Admin ( _, token ), Dash ) ->
           Dash.initCmd token api
           |> Cmd.map DashMsg
 

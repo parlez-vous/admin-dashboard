@@ -103,7 +103,7 @@ update state msg model =
       , NoUpdate
       )
         
-    ( Session.Admin ( admin, token ), SubmitDomain rawDomain ) ->
+    ( Session.Admin ( _, token ), SubmitDomain rawDomain ) ->
       if not (isValidHostname rawDomain)
       then
         let
@@ -191,7 +191,7 @@ viewSite site =
 
 
 view : SharedState -> Input.Admin -> Model -> (Title, Html Msg)
-view sharedState admin model = 
+view _ admin model = 
   let
     welcomeMsg = "Hello " ++ admin.username ++ "! Looks like you haven't registered any sites yet."
 

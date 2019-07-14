@@ -166,7 +166,7 @@ getSites token api toMsg =
   let
     sitesDecoder = D.field "data" (D.list Input.siteDecoder)
 
-    expect = (Http.expectJson (RemoteData.fromResult >> toMsg) sitesDecoder)
+    expect = Http.expectJson (RemoteData.fromResult >> toMsg) sitesDecoder
   in
     secureGet
       (api ++ adminPath ++ "/sites")

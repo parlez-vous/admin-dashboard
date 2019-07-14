@@ -6,7 +6,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
 import Url
-import List
+
 
 
 import Api
@@ -50,21 +50,17 @@ type Msg
   | RouterMsg Router.Msg
 
 
+main : Program Flags Model Msg
 main =
   Browser.application
     { init = init
     , update = update
     , view = view
-    , subscriptions = subscriptions
+    , subscriptions = \_ -> Sub.none
     , onUrlChange = UrlChanged
     , onUrlRequest = LinkClicked
     }
 
-
--- SUBSCRIPTIONS
-
-subscriptions : Model -> Sub Msg
-subscriptions model = Sub.none
 
 
 
