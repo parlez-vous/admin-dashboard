@@ -1,4 +1,4 @@
-module Routes.Router exposing
+module Router exposing
   ( Model
   , Msg(..)
   , init

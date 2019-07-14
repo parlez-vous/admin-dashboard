@@ -12,8 +12,8 @@ import List
 import Api
 import Api.Deserialize as Input
 import SharedState exposing (SharedState)
+import Router
 import Routes.Admin as Admin
-import Routes.Router as Router
 import Session
 
 
