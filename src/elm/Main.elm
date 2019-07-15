@@ -17,30 +17,10 @@ import Session
 
 
 type alias Model =
-  { state : AppState
-  , url   : Url.Url
+  { state  : SharedState
+  , router : Router.Model
   }
 
-
-{--
-TODO: refactor
-https://github.com/parlez-vous/site/issues/4
-
-Ready means one of two things:
- - We have a token stored locally AND we have _tried_ to
-   get the user's info with the given token
-
- - There is no stoken stored locally. Therefore we label
-   the user as a guest
-
-
-NotReady means one thing:
- - There is a token stored locally AND we have NOT yet
-   tried to get the user's info with the given token
---}
-type AppState
-  = Ready SharedState Router.Model
-  | NotReady Nav.Key Input.SessionToken String
 
 
 type Msg
@@ -76,29 +56,24 @@ type alias Flags =
 init : Flags -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
 init flags url key =
   let
-    (state, cmd) = case flags.token of
-      Just t  ->
-        ( NotReady key t flags.api
-        , Api.getAdminSession t flags.api <| SessionVerified t key
-        )
+    sessionCmd = case flags.token of
+      Just t ->
+        Api.getAdminSession t flags.api <| SessionVerified t key
 
-      Nothing ->
-        let
-          ( routerModel, routerCmd ) = Router.init flags.api url key Session.Guest
+      Nothing -> Cmd.none
 
-        in
-        ( Ready
-            (SharedState.init key Session.Guest flags.api)
-            routerModel
-        , Cmd.map RouterMsg routerCmd
-        )
+    sharedState = SharedState.init key flags.api
 
+    (routerModel, routerCmd) = Router.init url sharedState
   in
-  ( { state = state
-    , url   = url
-    }
-  , cmd
-  )
+    ( { state  = sharedState
+      , router = routerModel
+      }
+    , Cmd.batch
+        [ Cmd.map RouterMsg routerCmd
+        , sessionCmd
+        ] 
+    )
 
 
 
@@ -114,22 +89,13 @@ update msg model =
       updateRouter routerMsg model
     
     UrlChanged url ->
-      updateRouter (Router.UrlChange url) { model | url = url }
+      updateRouter (Router.UrlChange url) model
 
     LinkClicked urlRequest ->
       case urlRequest of
         Browser.Internal url ->
-          let
-            navKey = case model.state of
-              Ready sharedState _ ->
-                sharedState.navKey
-
-              NotReady navKey_ _ _ ->
-                navKey_
-
-          in
           ( model
-          , Nav.pushUrl navKey <| Url.toString url
+          , Nav.pushUrl model.state.navKey <| Url.toString url
           )
           
         -- leaving the app!
@@ -139,44 +105,35 @@ update msg model =
           )
 
     SessionVerified token key result ->
-      let
-        api =
-          case model.state of
-            Ready sharedState _ -> sharedState.api
-            NotReady _ _ api_    -> api_
-
-      in
       case result of
         Ok admin ->
           let
             adminSession = Session.Admin (admin, token)
 
-            ( routerModel, routerCmd ) = Router.init api model.url key adminSession
-          
-            sharedState =
-              SharedState.init key adminSession api
+            adminWithToken = Session.Admin (admin, token)
+
+            newSharedState =
+              SharedState.update (SharedState.UpdateSession adminWithToken) model.state
 
           in
           ( { model
-              | state = Ready sharedState routerModel
+              | state = newSharedState
             }
-          , Cmd.map RouterMsg routerCmd
+          , Cmd.none
           )
 
         Err e ->
           let
             _ = (Debug.log "Error while verifying session" e)
 
-            ( routerModel, routerCmd ) = Router.init api model.url key Session.Guest
-
             sharedState =
-              SharedState.init key Session.Guest api
+              SharedState.update (SharedState.UpdateSession Session.Guest) model.state
 
           in
             ( { model
-                | state = Ready sharedState routerModel
+                | state = sharedState
               }
-            , Cmd.map RouterMsg routerCmd
+            , Cmd.none
             )
 
               
@@ -185,41 +142,26 @@ update msg model =
 
 updateRouter : Router.Msg -> Model -> ( Model, Cmd Msg )
 updateRouter routerMsg model =
-  case model.state of
-    Ready sharedState routerModel ->
-      let
-        ( nextRouterModel, routerCmd, sharedStateUpdate ) =
-          Router.update sharedState routerMsg routerModel
+  let
+    ( nextRouterModel, routerCmd, sharedStateUpdate ) =
+      Router.update model.state routerMsg model.router
 
-        nextSharedState =
-          SharedState.update sharedStateUpdate sharedState
+    nextSharedState =
+      SharedState.update sharedStateUpdate model.state
 
-      in
-      ( { model | state = Ready nextSharedState nextRouterModel }
-      , Cmd.map RouterMsg routerCmd
-      )
+  in
+  ( { model
+      | state = nextSharedState,
+        router = nextRouterModel
+    }
+  , Cmd.map RouterMsg routerCmd
+  )
 
-    _ ->
-      let
-        _ =
-          Debug.log "We got a router message even though the app is not ready?"
-              routerMsg
-      in
-      ( model, Cmd.none )
 
 
 
 -- VIEW
 
 view : Model -> Browser.Document Msg
-view model =
-  case model.state of
-    Ready sharedState routeModel ->
-      Router.view RouterMsg sharedState routeModel
-
-    _ ->
-      { title = "Loading"
-      , body = [ div [] [ text "Loading ..." ] ]
-      }
-
-
+view { state, router } =
+  Router.view RouterMsg state router

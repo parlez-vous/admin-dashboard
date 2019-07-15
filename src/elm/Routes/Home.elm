@@ -10,6 +10,7 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Html.Attributes exposing (..)
+import RemoteData exposing (WebData)
 import Http
 
 
@@ -20,6 +21,7 @@ import UI.Icons exposing (logo)
 import Utils exposing (logout)
 import Session
 import SharedState exposing (SharedState, SharedStateUpdate)
+import UI.Loader as Loader
 
 
 
@@ -272,22 +274,26 @@ form_ model =
 
 type alias Title = String
 
-view : Session.User -> Model -> (Title, Html Msg)
-view user model =
+view : WebData Session.User -> Model -> (Title, Html Msg)
+view user_ model =
   let
     ctaButtons =
-      case user of
-        Session.Admin _ -> 
-          [ button [ onClick LogOut ] [ text "log out" ]
-          , button [ class "button-primary", onClick GoToDashboard ]
-              [ text "Go To Dashboard" ]
-          ]
+      case user_ of
+        RemoteData.Success user ->
+          case user of
+            Session.Admin _ -> 
+              [ button [ onClick LogOut ] [ text "log out" ]
+              , button [ class "button-primary", onClick GoToDashboard ]
+                  [ text "Go To Dashboard" ]
+              ]
 
-        Session.Guest ->
-          [ button [ onClick DisplayLogin ] [ text "log in" ]
-          , button [ class "button-primary", onClick DisplaySignup ]
-              [ text "sign up"]
-          ]
+            Session.Guest ->
+              [ button [ onClick DisplayLogin ] [ text "log in" ]
+              , button [ class "button-primary", onClick DisplaySignup ]
+                  [ text "sign up"]
+              ]
+        
+        _ -> [ Loader.donut ]
 
 
     html =

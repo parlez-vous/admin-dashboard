@@ -65,8 +65,12 @@ initRoute : SharedState -> Cmd Msg
 initRoute { session, api, navKey } =
   -- https://github.com/parlez-vous/site/issues/5
   case session of
-    Session.Guest -> Nav.pushUrl navKey "/"
-    Session.Admin ( _, token ) -> Api.getSites token api SitesResponse
+    RemoteData.Success user ->
+      case user of
+        Session.Guest -> Nav.pushUrl navKey "/"
+        Session.Admin ( _, token ) -> Api.getSites token api SitesResponse
+
+    _ -> Cmd.none
 
 
 isValidHostname : String -> Bool
@@ -82,91 +86,98 @@ isValidHostname rawDomain =
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update state msg model =
-  case (state.session, msg) of
+  case state.session of
+    RemoteData.NotAsked -> ( model, Cmd.none, NoUpdate )
+    RemoteData.Failure f -> ( model, Cmd.none, NoUpdate )
+    RemoteData.Loading -> ( model, Cmd.none, NoUpdate )
 
-    -- TODO: refactor update fn for private routes
-    -- Context: a session of Session.Guest should never occur
-    -- here since we manage redirection on private routes
-    -- at src/elm/Routes/Router.elm
-    -- https://github.com/parlez-vous/site/issues/5
-    ( Session.Guest, _ ) ->
-      ( model
-      , Nav.pushUrl state.navKey "/"
-      , NoUpdate
-      )
-
-    ( Session.Admin _, LogOut ) ->
-      let
-        ( logOutCmd, sharedStateUpdate ) = logout
-
-      in
-        ( model
-        , Cmd.batch [ logOutCmd, Nav.pushUrl state.navKey "/" ]
-        , sharedStateUpdate
-        )
-
-    ( Session.Admin _, SiteInput rawDomain ) ->
-      ( { model | hostname = rawDomain
-        }
-      , Cmd.none
-      , NoUpdate
-      )
-        
-    ( Session.Admin ( _, token ), SubmitDomain rawDomain ) ->
-      if not (isValidHostname rawDomain)
-      then
-        let
-          ( m, c ) = ( model, Cmd.none )
-            |> Toasty.addToast Toast.config ToastMsg "Invalid URL"
-        in
-        ( m, c, NoUpdate )
-      else
-        let
-          _ = Debug.log "Submitting domain ..." rawDomain
-
-          withProtocol = "https://" ++ rawDomain
-
-          data = Output.RegisterSite withProtocol
-        in
+    RemoteData.Success user ->
+      case user of
+      -- TODO: refactor update fn for private routes
+      -- Context: a session of Session.Guest should never occur
+      -- here since we manage redirection on private routes
+      -- at src/elm/Routes/Router.elm
+      -- https://github.com/parlez-vous/site/issues/5
+        Session.Guest -> 
           ( model
-          , Api.registerSite token state.api DomainSubmitted data
-          , NoUpdate 
+          , Nav.pushUrl state.navKey "/"
+          , NoUpdate
           )
 
-    ( _, DomainSubmitted result ) ->
-      case result of
-        Ok site ->
-          let
-            _ = Debug.log "Site registered: " site
-          in
-            ( model, Cmd.none, NoUpdate )
-        
-        Err e ->
-          let
-            _ = Debug.log "Failed to register site: " e
-          in
-            ( model, Cmd.none, NoUpdate )
-    
-    -- this gets triggered __some__time__
-    -- after a toast gets added to the stack
-    -- via `addToast`
-    ( _, ToastMsg subMsg ) ->
-      let
-        ( m , cmd ) =
-          model
-          |> Toasty.update Toast.config ToastMsg subMsg
+        Session.Admin ( admin, token ) ->
+          case msg of
+            LogOut -> 
+              let
+                ( logOutCmd, sharedStateUpdate ) = logout
 
-      in
-        ( m
-        , cmd
-        , NoUpdate
-        )
+              in
+                ( model
+                , Cmd.batch [ logOutCmd, Nav.pushUrl state.navKey "/" ]
+                , sharedStateUpdate
+                )
+
+            SiteInput rawDomain ->
+              ( { model | hostname = rawDomain
+                }
+              , Cmd.none
+              , NoUpdate
+              )
+        
+            SubmitDomain rawDomain ->
+              if not (isValidHostname rawDomain)
+              then
+                let
+                  ( m, c ) = ( model, Cmd.none )
+                    |> Toasty.addToast Toast.config ToastMsg "Invalid URL"
+                in
+                ( m, c, NoUpdate )
+              else
+                let
+                  _ = Debug.log "Submitting domain ..." rawDomain
+
+                  withProtocol = "https://" ++ rawDomain
+
+                  data = Output.RegisterSite withProtocol
+                in
+                  ( model
+                  , Api.registerSite token state.api DomainSubmitted data
+                  , NoUpdate 
+                  )
+
+            DomainSubmitted result ->
+              case result of
+                Ok site ->
+                  let
+                    _ = Debug.log "Site registered: " site
+                  in
+                    ( model, Cmd.none, NoUpdate )
+                
+                Err e ->
+                  let
+                    _ = Debug.log "Failed to register site: " e
+                  in
+                    ( model, Cmd.none, NoUpdate )
     
-    ( _, SitesResponse response ) ->
-      ( { model | sites = response}
-      , Cmd.none
-      , NoUpdate
-      )
+            -- this gets triggered __some__time__
+            -- after a toast gets added to the stack
+            -- via `addToast`
+            ToastMsg subMsg ->
+              let
+                ( m , cmd ) =
+                  model
+                  |> Toasty.update Toast.config ToastMsg subMsg
+
+              in
+                ( m
+                , cmd
+                , NoUpdate
+                )
+    
+            SitesResponse response ->
+              ( { model | sites = response}
+              , Cmd.none
+              , NoUpdate
+              )
       
       
 

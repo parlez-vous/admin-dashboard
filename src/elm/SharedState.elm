@@ -7,6 +7,7 @@ module SharedState exposing
   
 
 import Browser.Navigation
+import RemoteData exposing (WebData)
 
 import Session
 
@@ -19,15 +20,15 @@ type SharedStateUpdate
 
 type alias SharedState =
   { navKey  : Browser.Navigation.Key
-  , session : Session.User
+  , session : WebData Session.User
   , api     : String
   }
 
 
-init : Browser.Navigation.Key -> Session.User -> String -> SharedState
-init key session api =
+init : Browser.Navigation.Key -> String -> SharedState
+init key api =
   { navKey  = key
-  , session = session
+  , session = RemoteData.NotAsked
   , api     = api
   }
 
@@ -39,7 +40,7 @@ update updateMsg state =
       let 
         _ = Debug.log "Session Updated " session
       in
-      { state | session = session }
+      { state | session = RemoteData.Success session }
     
     NoUpdate ->
       state

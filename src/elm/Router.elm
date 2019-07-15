@@ -10,6 +10,7 @@ module Router exposing
 import Html as Html exposing (..)
 import Browser
 import Browser.Navigation as Nav
+import RemoteData
 import Url exposing (Url)
 import Url.Parser as Parser exposing (Parser, oneOf, s, int, (</>))
 
@@ -36,6 +37,16 @@ type alias Model =
   , route    : Route
   }
 -}
+
+
+{--
+Would be nice if it could be modeled like this:
+
+( Home, HomeModel )
+( Dash, DashModel )
+( Site, SiteModel )
+( NotFound, () )
+--}
 type alias Model =
   { homeModel  : Home.Model
   , dashModel  : Dash.Model
@@ -67,23 +78,17 @@ fromUrl : Url -> Route
 fromUrl = Maybe.withDefault NotFound << Parser.parse parser
 
 
-init : String -> Url -> Nav.Key -> Session.User -> ( Model, Cmd Msg )
-init api url navKey session =
+init : Url -> SharedState -> ( Model, Cmd Msg )
+init url sharedState =
   let
     route = fromUrl url
-
-    pseudoSharedState =
-      { session = session
-      , api = api
-      , navKey = navKey
-      }
 
   in
   ( { homeModel = Home.init
     , dashModel = Dash.init
     , route     = route
     }
-  , transitionTrigger route pseudoSharedState
+  , transitionTrigger route sharedState
   )
 
 
@@ -93,11 +98,18 @@ init api url navKey session =
 transitionTrigger : Route -> SharedState -> Cmd Msg
 transitionTrigger route state =
   case ( route, state.session ) of
-    ( Dash, Session.Admin _ ) -> Cmd.map DashMsg <| Dash.initRoute state
+    ( _, RemoteData.NotAsked ) -> Cmd.none
+    ( _, RemoteData.Loading )  -> Cmd.none
+
+    -- TODO: potentially deal with failure case
+    ( _, RemoteData.Failure _) -> Cmd.none
+    
+    ( Dash, RemoteData.Success (Session.Admin _) ) ->
+      Cmd.map DashMsg <| Dash.initRoute state
 
     -- If guest visits a private route, redirect them to the home page
-    ( Dash, Session.Guest ) -> Nav.pushUrl state.navKey "/"
-    ( Site _, Session.Guest ) -> Nav.pushUrl state.navKey "/"
+    ( Dash, RemoteData.Success Session.Guest ) -> Nav.pushUrl state.navKey "/"
+    ( Site _, RemoteData.Success Session.Guest ) -> Nav.pushUrl state.navKey "/"
 
     _ -> Cmd.none
 
@@ -156,15 +168,20 @@ view toMsg sharedState routerModel =
 
         Dash ->
           case sharedState.session of
-            Session.Guest ->
+            RemoteData.Success Session.Guest ->
               ( "Redirecting ..."
               , div [] [ text "Redirecting ..."]
               )
             
-            Session.Admin ( admin, _ ) -> 
+            RemoteData.Success (Session.Admin ( admin, _ )) -> 
               Dash.view sharedState admin routerModel.dashModel
               |> Tuple.mapSecond (Html.map DashMsg)
               |> Tuple.mapSecond (Html.map toMsg)
+
+            _ ->
+              ( "Loading ..."
+              , div [] [ text "Loading ..."]
+              )
 
         Site siteId ->
           ( "Site: " ++ (String.fromInt siteId)
