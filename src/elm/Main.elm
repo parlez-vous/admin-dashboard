@@ -57,7 +57,8 @@ type alias Flags =
 init : Flags -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
 init flags url key =
   let
-    defaultSharedState = SharedState.init key flags.api
+    defaultSharedState =
+      SharedState.init key flags.api
 
     (sharedState, sessionCmd) = case flags.token of
       Just t ->
@@ -67,7 +68,8 @@ init flags url key =
 
       Nothing ->
         ( { defaultSharedState
-            | session = RemoteData.Success Session.Guest}
+            | session = RemoteData.Success Session.Guest
+          }
         , Cmd.none
         )
 
