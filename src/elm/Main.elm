@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
+import RemoteData
 import Url
 
 
@@ -56,13 +57,19 @@ type alias Flags =
 init : Flags -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
 init flags url key =
   let
-    sessionCmd = case flags.token of
+    defaultSharedState = SharedState.init key flags.api
+
+    (sharedState, sessionCmd) = case flags.token of
       Just t ->
-        Api.getAdminSession t flags.api <| SessionVerified t key
+        ( defaultSharedState
+        , Api.getAdminSession t flags.api <| SessionVerified t key
+        )
 
-      Nothing -> Cmd.none
-
-    sharedState = SharedState.init key flags.api
+      Nothing ->
+        ( { defaultSharedState
+            | session = RemoteData.Success Session.Guest}
+        , Cmd.none
+        )
 
     (routerModel, routerCmd) = Router.init url sharedState
   in
@@ -105,38 +112,23 @@ update msg model =
           )
 
     SessionVerified token key result ->
-      case result of
-        Ok admin ->
-          let
-            adminSession = Session.Admin (admin, token)
+      let
+        session = case result of
+          Ok admin ->
+            Session.Admin (admin, token)
 
-            adminWithToken = Session.Admin (admin, token)
+          _ ->
+            Session.Guest
 
-            newSharedState =
-              SharedState.update (SharedState.UpdateSession adminWithToken) model.state
+        newSharedState =
+          SharedState.update (SharedState.UpdateSession session) model.state
 
-          in
-          ( { model
-              | state = newSharedState
-            }
-          , Cmd.none
-          )
+        cmd = Router.transitionTrigger model.router.route newSharedState
 
-        Err e ->
-          let
-            _ = (Debug.log "Error while verifying session" e)
-
-            sharedState =
-              SharedState.update (SharedState.UpdateSession Session.Guest) model.state
-
-          in
-            ( { model
-                | state = sharedState
-              }
-            , Cmd.none
-            )
-
-              
+        in
+        ( { model | state = newSharedState }
+        , Cmd.map RouterMsg cmd
+        )
 
 
 

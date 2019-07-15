@@ -2,6 +2,7 @@ module Router exposing
   ( Model
   , Msg(..)
   , init
+  , transitionTrigger
   , update
   , view
   )
