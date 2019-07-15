@@ -13,6 +13,7 @@ import Iso8601
 import Json.Decode as D exposing (Decoder)
 import Time
 
+-- TODO: convert into opaque type
 type alias SessionToken = String
 
 type alias Admin =
