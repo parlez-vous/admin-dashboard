@@ -1,3 +1,4 @@
+const webpack = require('webpack')
 const path = require("path");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
@@ -8,6 +9,18 @@ const mode = process.env.NODE_ENV === 'production'
   : 'development'
 
 
+// Copy the specified environment variables into an object we can pass to
+// webpack's DefinePlugin
+const copyArgs = (args) =>
+  args.reduce(
+    (acc, key) => ({
+      // Create an object with the specified key
+      ...acc,
+      [`process.env.${key}`]: JSON.stringify(process.env[key]),
+    }),
+    {}
+  )
+  
 const commonCssLoaders = [
   'style-loader',
   'css-loader',
@@ -59,6 +72,12 @@ module.exports = {
         removeComments: true
       }
       // favicon: path.resolve('./static/favicon.png')
+    }),
+    new webpack.DefinePlugin({
+      ...copyArgs([
+        'NODE_ENV',
+        'API',
+      ]),
     })
   ],
 
