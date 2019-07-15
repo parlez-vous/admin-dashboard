@@ -97,22 +97,25 @@ init url sharedState =
 -- trigger commands on page transitions
 -- and initializations
 transitionTrigger : Route -> SharedState -> Cmd Msg
-transitionTrigger route state =
-  case ( route, state.session ) of
-    ( _, RemoteData.NotAsked ) -> Cmd.none
-    ( _, RemoteData.Loading )  -> Cmd.none
+transitionTrigger route { session, api, navKey } =
+  case session of
+    RemoteData.Success userSession ->
+      case ( route, userSession ) of
+        ( Dash, (Session.Admin ( _, token )) ) ->
+          Cmd.map DashMsg <| Dash.initRoute token api navKey
 
-    -- TODO: potentially deal with failure case
-    ( _, RemoteData.Failure _) -> Cmd.none
-    
-    ( Dash, RemoteData.Success (Session.Admin _) ) ->
-      Cmd.map DashMsg <| Dash.initRoute state
+        -- redirect guests on private routes
+        ( Dash, Session.Guest ) ->
+          Nav.pushUrl navKey "/"
 
-    -- If guest visits a private route, redirect them to the home page
-    ( Dash, RemoteData.Success Session.Guest ) -> Nav.pushUrl state.navKey "/"
-    ( Site _, RemoteData.Success Session.Guest ) -> Nav.pushUrl state.navKey "/"
+        ( Site _, Session.Guest ) ->
+          Nav.pushUrl navKey "/"
+        
+        _ -> Cmd.none
 
-    _ -> Cmd.none
+    _ ->
+      Cmd.none
+
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )

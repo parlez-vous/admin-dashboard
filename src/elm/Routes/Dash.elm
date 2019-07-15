@@ -61,16 +61,15 @@ init =
 --
 -- TODO: store sites on shared state
 --   to prevent from loading data on every page load
-initRoute : SharedState -> Cmd Msg
-initRoute { session, api, navKey } =
-  -- https://github.com/parlez-vous/site/issues/5
-  case session of
-    RemoteData.Success user ->
-      case user of
-        Session.Guest -> Nav.pushUrl navKey "/"
-        Session.Admin ( _, token ) -> Api.getSites token api SitesResponse
-
-    _ -> Cmd.none
+--
+-- https://github.com/parlez-vous/site/issues/5
+initRoute :
+  String ->
+  String ->
+  Nav.Key ->
+  Cmd Msg
+initRoute token api navKey =
+  Api.getSites token api SitesResponse
 
 
 isValidHostname : String -> Bool
