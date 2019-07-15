@@ -35,7 +35,6 @@ type alias Sites = List Input.Site
 type alias Model =
   { hostname : String
   , toasties : Toast.ToastState
-  , sites : WebData Sites
   }
 
 
@@ -53,7 +52,6 @@ init : Model
 init =
   { hostname = ""
   , toasties = Toast.init
-  , sites = RemoteData.NotAsked
   }
 
 
@@ -173,10 +171,15 @@ update state msg model =
                 )
     
             SitesResponse response ->
-              ( { model | sites = response}
-              , Cmd.none
-              , NoUpdate
-              )
+              case response of
+                RemoteData.Success sites ->
+                  ( model
+                  , Cmd.none
+                  , UpdateSites sites
+                  )
+
+                _ ->
+                  ( model, Cmd.none, NoUpdate )
       
       
 
@@ -210,7 +213,7 @@ viewSite site =
 
 
 view : SharedState -> Input.Admin -> Model -> (Title, Html Msg)
-view _ admin model = 
+view state admin model = 
   let
     welcomeMsg = "Hello " ++ admin.username ++ "! Looks like you haven't registered any sites yet."
 
@@ -222,7 +225,7 @@ view _ admin model =
         [ Loader.donut ]
 
     content =
-      case model.sites of
+      case state.sites of
         RemoteData.NotAsked -> loading
         RemoteData.Loading  -> loading
         RemoteData.Success sites ->

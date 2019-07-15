@@ -10,26 +10,30 @@ import Browser.Navigation
 import RemoteData exposing (WebData)
 
 import Session
+import Api.Deserialize as Input
 
 
 
 type SharedStateUpdate
   = NoUpdate
   | UpdateSession Session.User
+  | UpdateSites Input.Sites
 
 
 type alias SharedState =
   { navKey  : Browser.Navigation.Key
-  , session : WebData Session.User
   , api     : String
+  , session : WebData Session.User
+  , sites   : WebData Input.Sites
   }
 
 
 init : Browser.Navigation.Key -> String -> SharedState
 init key api =
   { navKey  = key
-  , session = RemoteData.NotAsked
   , api     = api
+  , session = RemoteData.NotAsked
+  , sites   = RemoteData.NotAsked
   }
 
 
@@ -42,5 +46,8 @@ update updateMsg state =
       in
       { state | session = RemoteData.Success session }
     
+    UpdateSites sites ->
+      { state | sites = RemoteData.Success sites }
+
     NoUpdate ->
       state
