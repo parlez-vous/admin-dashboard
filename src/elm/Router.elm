@@ -40,56 +40,42 @@ type alias Model =
 -}
 
 
-{--
-Would be nice if it could be modeled like this:
-
-( Home, HomeModel )
-( Dash, DashModel )
-( Site, SiteModel )
-( NotFound, () )
---}
-type alias Model =
-  { homeModel  : Home.Model
-  , dashModel  : Dash.Model
-  , route      : Route
-  }
-
 type Route
-  = Home
-  | Dash
+  = Home Home.Model
+  | Dash Dash.Model
   | Site Int
   | NotFound
 
 
+type alias Model = Route
+
+
 type Msg
   = UrlChange Url
-  | HomeMsg Home.Msg
-  | DashMsg Dash.Msg
+  | HomeMsg Home.Model Home.Msg
+  | DashMsg Dash.Model Dash.Msg
 
 
 parser : Parser (Route -> a) a
 parser =
   oneOf
-    [ Parser.map Home Parser.top
-    , Parser.map Dash (s "dash")
+    [ Parser.map (Home Home.init) Parser.top
+    , Parser.map (Dash Dash.init) (s "dash")
     , Parser.map Site (s "sites" </> int)
     ]
 
-fromUrl : Url -> Route
+fromUrl : Url -> Model
 fromUrl = Maybe.withDefault NotFound << Parser.parse parser
 
 
 init : Url -> SharedState -> ( Model, Cmd Msg )
 init url sharedState =
   let
-    route = fromUrl url
+    model = fromUrl url
 
   in
-  ( { homeModel = Home.init
-    , dashModel = Dash.init
-    , route     = route
-    }
-  , transitionTrigger route sharedState
+  ( model
+  , transitionTrigger model sharedState
   )
 
 
@@ -101,11 +87,11 @@ transitionTrigger route { session, api, navKey } =
   case session of
     RemoteData.Success userSession ->
       case ( route, userSession ) of
-        ( Dash, (Session.Admin ( _, token )) ) ->
-          Cmd.map DashMsg <| Dash.initRoute token api navKey
+        ( Dash dashModel , (Session.Admin ( _, token )) ) ->
+          Cmd.map (DashMsg dashModel) <| Dash.initRoute token api navKey
 
         -- redirect guests on private routes
-        ( Dash, Session.Guest ) ->
+        ( Dash _, Session.Guest ) ->
           Nav.pushUrl navKey "/"
 
         ( Site _, Session.Guest ) ->
@@ -128,32 +114,28 @@ update state msg model =
         transitionTriggerMsg = transitionTrigger route state
 
       in
-      ( { model | route = route }
+      ( route
       , transitionTriggerMsg
       , SharedState.NoUpdate
       )
       
-    HomeMsg homeMsg ->
+    HomeMsg homeModel homeMsg ->
       let 
-        ( homeModel, homeCmd, sharedStateUpdate ) =
-          Home.update state homeMsg model.homeModel
+        ( newModel, homeCmd, sharedStateUpdate ) =
+          Home.update state homeMsg homeModel
       in
-        ( { model
-            | homeModel = homeModel
-          }
-        , Cmd.map HomeMsg homeCmd
+        ( Home newModel
+        , Cmd.map (HomeMsg newModel) homeCmd
         , sharedStateUpdate
         )
 
-    DashMsg dashMsg ->
+    DashMsg dashModel dashMsg ->
       let
-        ( dashModel, dashCmd, sharedStateUpdate ) =
-          Dash.update state dashMsg model.dashModel
+        ( newModel, dashCmd, sharedStateUpdate ) =
+          Dash.update state dashMsg dashModel
       in
-      ( { model
-          | dashModel = dashModel
-        }
-      , Cmd.map DashMsg dashCmd
+      ( Dash newModel
+      , Cmd.map (DashMsg dashModel) dashCmd
       , sharedStateUpdate
       )
 
@@ -163,14 +145,14 @@ view : (Msg -> msg) -> SharedState -> Model -> Browser.Document msg
 view toMsg sharedState routerModel =
   let
     ( title, html ) =
-      case routerModel.route of
-        Home ->
-          Home.view sharedState.session routerModel.homeModel
-          |> Tuple.mapSecond (Html.map HomeMsg)
+      case routerModel of
+        Home homeModel ->
+          Home.view sharedState.session homeModel
+          |> Tuple.mapSecond (Html.map <| HomeMsg homeModel)
           |> Tuple.mapSecond (Html.map toMsg)
           
 
-        Dash ->
+        Dash dashModel ->
           case sharedState.session of
             RemoteData.Success Session.Guest ->
               ( "Redirecting ..."
@@ -178,8 +160,8 @@ view toMsg sharedState routerModel =
               )
             
             RemoteData.Success (Session.Admin ( admin, _ )) -> 
-              Dash.view sharedState admin routerModel.dashModel
-              |> Tuple.mapSecond (Html.map DashMsg)
+              Dash.view sharedState admin dashModel
+              |> Tuple.mapSecond (Html.map <| DashMsg dashModel)
               |> Tuple.mapSecond (Html.map toMsg)
 
             _ ->

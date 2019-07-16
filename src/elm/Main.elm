@@ -125,7 +125,7 @@ update msg model =
         newSharedState =
           SharedState.update (SharedState.UpdateSession session) model.state
 
-        cmd = Router.transitionTrigger model.router.route newSharedState
+        cmd = Router.transitionTrigger model.router newSharedState
 
         in
         ( { model | state = newSharedState }
