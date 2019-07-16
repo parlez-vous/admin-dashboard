@@ -84,10 +84,6 @@ isValidHostname rawDomain =
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update state msg model =
   case state.session of
-    RemoteData.NotAsked -> ( model, Cmd.none, NoUpdate )
-    RemoteData.Failure f -> ( model, Cmd.none, NoUpdate )
-    RemoteData.Loading -> ( model, Cmd.none, NoUpdate )
-
     RemoteData.Success user ->
       case user of
       -- TODO: refactor update fn for private routes
@@ -181,6 +177,8 @@ update state msg model =
                 _ ->
                   ( model, Cmd.none, NoUpdate )
       
+    _ -> ( model, Cmd.none, NoUpdate )
+
       
 
 
