@@ -23,16 +23,16 @@ type SharedStateUpdate
 type alias SharedState =
   { navKey  : Browser.Navigation.Key
   , api     : String
-  , session : WebData Session.User
+  , session : Session.User
   , sites   : WebData Input.Sites
   }
 
 
-init : Browser.Navigation.Key -> String -> SharedState
-init key api =
+init : Browser.Navigation.Key -> String -> Session.User -> SharedState
+init key api user =
   { navKey  = key
   , api     = api
-  , session = RemoteData.NotAsked
+  , session = user
   , sites   = RemoteData.NotAsked
   }
 
@@ -44,7 +44,7 @@ update updateMsg state =
       let 
         _ = Debug.log "Session Updated " session
       in
-      { state | session = RemoteData.Success session }
+      { state | session = session }
     
     UpdateSites sites ->
       { state | sites = RemoteData.Success sites }

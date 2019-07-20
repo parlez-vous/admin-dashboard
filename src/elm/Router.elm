@@ -84,24 +84,18 @@ init url sharedState =
 -- and initializations
 transitionTrigger : Route -> SharedState -> Cmd Msg
 transitionTrigger route { session, api, navKey } =
-  case session of
-    RemoteData.Success userSession ->
-      case ( route, userSession ) of
-        ( Dash dashModel , (Session.Admin ( _, token )) ) ->
-          Cmd.map (DashMsg dashModel) <| Dash.initRoute token api navKey
+  case ( route, session ) of
+    ( Dash dashModel , (Session.Admin ( _, token )) ) ->
+      Cmd.map (DashMsg dashModel) <| Dash.initRoute token api navKey
 
-        -- redirect guests on private routes
-        ( Dash _, Session.Guest ) ->
-          Nav.pushUrl navKey "/"
+    -- redirect guests on private routes
+    ( Dash _, Session.Guest ) ->
+      Nav.pushUrl navKey "/"
 
-        ( Site _, Session.Guest ) ->
-          Nav.pushUrl navKey "/"
-        
-        _ -> Cmd.none
-
-    _ ->
-      Cmd.none
-
+    ( Site _, Session.Guest ) ->
+      Nav.pushUrl navKey "/"
+    
+    _ -> Cmd.none
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -154,20 +148,16 @@ view toMsg sharedState routerModel =
 
         Dash dashModel ->
           case sharedState.session of
-            RemoteData.Success Session.Guest ->
+            Session.Guest ->
               ( "Redirecting ..."
               , div [] [ text "Redirecting ..."]
               )
             
-            RemoteData.Success (Session.Admin ( admin, _ )) -> 
+            Session.Admin ( admin, _ ) -> 
               Dash.view sharedState admin dashModel
               |> Tuple.mapSecond (Html.map <| DashMsg dashModel)
               |> Tuple.mapSecond (Html.map toMsg)
 
-            _ ->
-              ( "Loading ..."
-              , div [] [ text "Loading ..."]
-              )
 
         Site siteId ->
           ( "Site: " ++ (String.fromInt siteId)

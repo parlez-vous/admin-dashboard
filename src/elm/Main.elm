@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
-import RemoteData
+import RemoteData exposing (WebData)
 import Url
 
 
@@ -17,17 +17,28 @@ import Router
 import Session
 
 
-type alias Model =
+type alias NotReadyData =
+  { navKey  : Nav.Key
+  , api     : String
+  , session : WebData Session.User
+  }
+
+
+type alias AppData = 
   { state  : SharedState
   , router : Router.Model
   }
+
+type Model
+  = Ready AppData
+  | NotReady NotReadyData
 
 
 
 type Msg
   = UrlChanged Url.Url
   | LinkClicked Browser.UrlRequest
-  | SessionVerified Input.SessionToken Nav.Key (Result Http.Error Input.Admin)
+  | SessionVerified Input.SessionToken Url.Url (Result Http.Error Input.Admin)
   | RouterMsg Router.Msg
 
 
@@ -57,31 +68,30 @@ type alias Flags =
 init : Flags -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
 init flags url key =
   let
-    defaultSharedState =
-      SharedState.init key flags.api
-
-    (sharedState, sessionCmd) = case flags.token of
+    (model, cmd) = case flags.token of
       Just t ->
-        ( defaultSharedState
-        , Api.getAdminSession t flags.api <| SessionVerified t key
+        ( NotReady (NotReadyData key flags.api RemoteData.NotAsked)
+        , Api.getAdminSession t flags.api <| SessionVerified t url
         )
-
+        
       Nothing ->
-        ( { defaultSharedState
-            | session = RemoteData.Success Session.Guest
-          }
-        , Cmd.none
+        let
+          sharedState = SharedState key flags.api Session.Guest RemoteData.NotAsked
+          ( routerModel, routerCmd ) = Router.init url sharedState
+
+          appData =
+            { state = sharedState
+            , router = routerModel 
+            }
+          
+        in
+        ( Ready appData
+        , Cmd.map RouterMsg routerCmd
         )
 
-    (routerModel, routerCmd) = Router.init url sharedState
   in
-    ( { state  = sharedState
-      , router = routerModel
-      }
-    , Cmd.batch
-        [ Cmd.map RouterMsg routerCmd
-        , sessionCmd
-        ] 
+    ( model
+    , cmd
     )
 
 
@@ -89,6 +99,18 @@ init flags url key =
 
 -- UPDATE
 
+getNavKey : Model -> Nav.Key
+getNavKey model =
+  case model of
+    Ready { state } -> state.navKey
+    NotReady { navKey } -> navKey
+
+
+getApi : Model -> String
+getApi model =
+  case model of
+    Ready { state } -> state.api
+    NotReady { api } -> api
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -104,7 +126,7 @@ update msg model =
       case urlRequest of
         Browser.Internal url ->
           ( model
-          , Nav.pushUrl model.state.navKey <| Url.toString url
+          , Nav.pushUrl (getNavKey model) <| Url.toString url
           )
           
         -- leaving the app!
@@ -113,7 +135,7 @@ update msg model =
           , Nav.load urlStr
           )
 
-    SessionVerified token key result ->
+    SessionVerified token url result ->
       let
         session = case result of
           Ok admin ->
@@ -122,34 +144,44 @@ update msg model =
           _ ->
             Session.Guest
 
-        newSharedState =
-          SharedState.update (SharedState.UpdateSession session) model.state
+        key = getNavKey model
+        api = getApi model
 
-        cmd = Router.transitionTrigger model.router newSharedState
+        sharedState =
+          SharedState.init key api session
+
+        (routerModel, routerCmd) = Router.init url sharedState
 
         in
-        ( { model | state = newSharedState }
-        , Cmd.map RouterMsg cmd
+        ( Ready
+          { state = sharedState,
+            router = routerModel 
+          }
+        , Cmd.map RouterMsg routerCmd
         )
 
 
 
 updateRouter : Router.Msg -> Model -> ( Model, Cmd Msg )
 updateRouter routerMsg model =
-  let
-    ( nextRouterModel, routerCmd, sharedStateUpdate ) =
-      Router.update model.state routerMsg model.router
+  case model of
+    NotReady _ -> (model, Cmd.none)
 
-    nextSharedState =
-      SharedState.update sharedStateUpdate model.state
+    Ready appData ->
+      let
+        ( nextRouterModel, routerCmd, sharedStateUpdate ) =
+          Router.update appData.state routerMsg appData.router
 
-  in
-  ( { model
-      | state = nextSharedState,
-        router = nextRouterModel
-    }
-  , Cmd.map RouterMsg routerCmd
-  )
+        nextSharedState =
+          SharedState.update sharedStateUpdate appData.state
+
+      in
+      ( Ready { appData
+          | state = nextSharedState,
+            router = nextRouterModel
+        }
+      , Cmd.map RouterMsg routerCmd
+      )
 
 
 
@@ -157,5 +189,13 @@ updateRouter routerMsg model =
 -- VIEW
 
 view : Model -> Browser.Document Msg
-view { state, router } =
-  Router.view RouterMsg state router
+view model =
+  case model of
+    Ready { state, router } ->
+      Router.view RouterMsg state router
+
+    NotReady _ ->
+      { title = "Loading ..."
+      , body = [div [] [ text "Loading ..." ]]
+      }
+      
