@@ -55,6 +55,13 @@ init =
   }
 
 
+-- This function can be generalized accross
+-- all routes
+-- 
+-- 1. take shared state
+-- 2.a get token from shared state
+-- 2.b redirect to home page if user is unauthenticated
+-- 
 -- gets called on every page load
 --
 -- TODO: store sites on shared state
