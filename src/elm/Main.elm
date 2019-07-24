@@ -12,15 +12,13 @@ import Url
 
 import Api
 import Api.Deserialize as Input
-import SharedState exposing (SharedState)
+import SharedState exposing (SharedState(..))
 import Router
-import Session
 
 
 type alias NotReadyData =
   { navKey  : Nav.Key
   , api     : String
-  , session : WebData Session.User
   }
 
 
@@ -70,13 +68,14 @@ init flags url key =
   let
     (model, cmd) = case flags.token of
       Just t ->
-        ( NotReady (NotReadyData key flags.api RemoteData.NotAsked)
+        ( NotReady (NotReadyData key flags.api)
         , Api.getAdminSession t flags.api <| SessionVerified t url
         )
         
       Nothing ->
         let
-          sharedState = SharedState key flags.api Session.Guest RemoteData.NotAsked
+          sharedState = Public <| SharedState.init key flags.api 
+
           ( routerModel, routerCmd ) = Router.init url sharedState
 
           appData =
@@ -102,14 +101,22 @@ init flags url key =
 getNavKey : Model -> Nav.Key
 getNavKey model =
   case model of
-    Ready { state } -> state.navKey
+    Ready { state } ->
+      case state of
+        Public { navKey } -> navKey
+        Private { navKey } -> navKey
+        
     NotReady { navKey } -> navKey
 
 
 getApi : Model -> String
 getApi model =
   case model of
-    Ready { state } -> state.api
+    Ready { state } ->
+      case state of
+        Public { api } -> api
+        Private { api } -> api
+
     NotReady { api } -> api
 
 
@@ -137,18 +144,18 @@ update msg model =
 
     SessionVerified token url result ->
       let
-        session = case result of
+        publicState = SharedState.init key api
+
+        sharedState = case result of
           Ok admin ->
-            Session.Admin (admin, token)
+            Private
+            <| SharedState.toPrivate (admin, token) publicState
 
           _ ->
-            Session.Guest
+            Public publicState
 
         key = getNavKey model
         api = getApi model
-
-        sharedState =
-          SharedState.init key api session
 
         (routerModel, routerCmd) = Router.init url sharedState
 

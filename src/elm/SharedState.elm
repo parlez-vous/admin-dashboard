@@ -1,53 +1,92 @@
 module SharedState exposing
-  ( SharedState
+  ( SharedState(..)
   , SharedStateUpdate(..)
+  , PrivateState
+  , PublicState
   , update
   , init
+  , toPrivate
   )
   
 
 import Browser.Navigation
 import RemoteData exposing (WebData)
 
-import Session
 import Api.Deserialize as Input
 
 
 
 type SharedStateUpdate
   = NoUpdate
-  | UpdateSession Session.User
+  | SetAdmin Input.AdminWithToken
   | UpdateSites Input.Sites
+  | LogOut PublicState
 
 
-type alias SharedState =
+type alias PublicState =
   { navKey  : Browser.Navigation.Key
   , api     : String
-  , session : Session.User
+  }
+
+type alias PrivateState =
+  { navKey  : Browser.Navigation.Key
+  , api     : String
+  , admin   : Input.AdminWithToken
   , sites   : WebData Input.Sites
   }
 
 
-init : Browser.Navigation.Key -> String -> Session.User -> SharedState
-init key api user =
-  { navKey  = key
-  , api     = api
-  , session = user
-  , sites   = RemoteData.NotAsked
+type SharedState
+  = Public PublicState
+  | Private PrivateState
+  
+
+
+toPrivate : Input.AdminWithToken -> PublicState -> PrivateState
+toPrivate admin publicState =
+  { navKey = publicState.navKey
+  , api = publicState.api
+  , admin = admin
+  , sites = RemoteData.NotAsked
   }
 
+
+init : Browser.Navigation.Key -> String -> PublicState
+init key api =
+  { navKey  = key
+  , api     = api
+  }
 
 update : SharedStateUpdate -> SharedState -> SharedState
 update updateMsg state =
   case updateMsg of
-    UpdateSession session ->
-      let 
-        _ = Debug.log "Session Updated " session
-      in
-      { state | session = session }
+    -- called when user logs in
+    SetAdmin admin ->
+      case state of
+        Private privateState ->
+          state
+
+        Public { navKey, api } ->
+          Private
+            { navKey = navKey
+            , api = api
+            , admin = admin
+            , sites = RemoteData.NotAsked
+            }
     
     UpdateSites sites ->
-      { state | sites = RemoteData.Success sites }
+      case state of
+        Public _ -> state
+
+        Private privateState -> 
+          Private
+            { privateState
+              | sites = RemoteData.Success sites
+            }
+
+
+    LogOut publicState ->
+      Public publicState
 
     NoUpdate ->
       state

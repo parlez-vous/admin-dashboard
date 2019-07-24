@@ -7,7 +7,7 @@ module Site exposing
 
 
 import Browser.Navigation as Nav
-import SharedState exposing (SharedState)
+import SharedState exposing (PrivateState)
 
 import Html exposing (..)
 
@@ -43,8 +43,8 @@ initRoute token api navKey = Cmd.none
 
 type alias Title = String
 
-view : SharedState -> Model -> (Title, Html msg)
+view : PrivateState -> Model -> (Title, Html msg)
 view state model =
   ( "Site"
-  , div [ ] [ text "" ]
+  , div [ ] [ text (String.fromInt model.siteId) ]
   )

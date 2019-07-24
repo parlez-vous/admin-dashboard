@@ -19,8 +19,7 @@ import Url.Parser as Parser exposing (Parser, oneOf, s, int, (</>))
 
 import Routes.Home as Home
 import Routes.Dash as Dash 
-import Session
-import SharedState exposing (SharedState, SharedStateUpdate)
+import SharedState exposing (SharedState(..), SharedStateUpdate)
 
 
 
@@ -83,16 +82,16 @@ init url sharedState =
 -- trigger commands on page transitions
 -- and initializations
 transitionTrigger : Route -> SharedState -> Cmd Msg
-transitionTrigger route { session, api, navKey } =
-  case ( route, session ) of
-    ( Dash dashModel , (Session.Admin ( _, token )) ) ->
-      Cmd.map (DashMsg dashModel) <| Dash.initRoute token api navKey
+transitionTrigger route state =
+  case ( route, state ) of
+    ( Dash dashModel , Private privateState ) ->
+      Cmd.map (DashMsg dashModel) <| Dash.initRoute privateState
 
     -- redirect guests on private routes
-    ( Dash _, Session.Guest ) ->
+    ( Dash _, Public { navKey } ) ->
       Nav.pushUrl navKey "/"
 
-    ( Site _, Session.Guest ) ->
+    ( Site _, Public { navKey } ) ->
       Nav.pushUrl navKey "/"
     
     _ -> Cmd.none
@@ -124,14 +123,22 @@ update state msg model =
         )
 
     DashMsg dashModel dashMsg ->
-      let
-        ( newModel, dashCmd, sharedStateUpdate ) =
-          Dash.update state dashMsg dashModel
-      in
-      ( Dash newModel
-      , Cmd.map (DashMsg dashModel) dashCmd
-      , sharedStateUpdate
-      )
+      case state of
+        Private privateState ->
+          let
+            ( newModel, dashCmd, sharedStateUpdate ) =
+              Dash.update privateState dashMsg dashModel
+          in
+          ( Dash newModel
+          , Cmd.map (DashMsg dashModel) dashCmd
+          , sharedStateUpdate
+          )
+
+        Public publicState ->
+          ( Dash dashModel
+          , Cmd.none
+          , SharedState.NoUpdate
+          )
 
 
 
@@ -141,20 +148,20 @@ view toMsg sharedState routerModel =
     ( title, html ) =
       case routerModel of
         Home homeModel ->
-          Home.view sharedState.session homeModel
+          Home.view sharedState homeModel
           |> Tuple.mapSecond (Html.map <| HomeMsg homeModel)
           |> Tuple.mapSecond (Html.map toMsg)
           
 
         Dash dashModel ->
-          case sharedState.session of
-            Session.Guest ->
+          case sharedState of
+            Public _ ->
               ( "Redirecting ..."
               , div [] [ text "Redirecting ..."]
               )
             
-            Session.Admin ( admin, _ ) -> 
-              Dash.view sharedState admin dashModel
+            Private privateState -> 
+              Dash.view privateState dashModel
               |> Tuple.mapSecond (Html.map <| DashMsg dashModel)
               |> Tuple.mapSecond (Html.map toMsg)
 

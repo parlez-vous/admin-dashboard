@@ -18,8 +18,7 @@ import Api.Output as Output
 import Api.Deserialize as Input
 import UI.Icons exposing (logo)
 import Utils exposing (logout)
-import Session
-import SharedState exposing (SharedState, SharedStateUpdate)
+import SharedState exposing (SharedState(..), SharedStateUpdate)
 import UI.Loader as Loader
 
 
@@ -41,7 +40,7 @@ type alias Model = FormState
 
 -- PORTS
 
-port setToken : Input.SessionToken -> Cmd msg
+port setToken : String -> Cmd msg
 
 
 
@@ -96,6 +95,19 @@ updateFormField currentForm msg =
           currentForm
 
 
+getNavKey : SharedState -> Nav.Key
+getNavKey sharedState =
+  case sharedState of
+    Public { navKey } -> navKey
+    Private { navKey } -> navKey
+
+
+getApi : SharedState -> String
+getApi sharedState =
+  case sharedState of
+    Public { api } -> api
+    Private { api } -> api
+    
 
 handleSubmitForm : String -> FormType -> Cmd Msg
 handleSubmitForm api form =
@@ -144,8 +156,12 @@ update sharedState msg model =
         )
 
     SubmitForm form ->
+      let
+        api = getApi sharedState
+      
+      in
       ( FormSubmitting
-      , handleSubmitForm sharedState.api form
+      , handleSubmitForm api form
       , SharedState.NoUpdate
       )
 
@@ -154,15 +170,17 @@ update sharedState msg model =
       case result of
         Ok adminWithToken ->
           let
+            navKey = getNavKey sharedState
+
             commands =
               Cmd.batch
                 [ setToken <| Tuple.second adminWithToken
-                , Nav.pushUrl sharedState.navKey "/dash"
+                , Nav.pushUrl navKey "/dash"
                 ]
           in
           ( FormHidden
           , commands
-          , SharedState.UpdateSession <| Session.Admin adminWithToken
+          , SharedState.SetAdmin adminWithToken
           )
 
         Err _ ->
@@ -172,14 +190,24 @@ update sharedState msg model =
           )
 
     GoToDashboard ->
+      let
+        navKey = getNavKey sharedState
+      in
       ( model
-      , Nav.pushUrl sharedState.navKey "/dash"
+      , Nav.pushUrl navKey "/dash"
       , SharedState.NoUpdate
       )
 
     LogOut ->
       let
-        ( cmd, sharedStateUpdate ) = logout
+        ( cmd, sharedStateUpdate ) =
+          case sharedState of
+            -- logging out from an unauthenticated state
+            -- does not make sense
+            Public _ -> ( Cmd.none, SharedState.NoUpdate )
+
+            Private { api, navKey } ->
+              logout { api = api, navKey = navKey }
 
       in
       ( model
@@ -273,18 +301,18 @@ form_ model =
 
 type alias Title = String
 
-view : Session.User -> Model -> (Title, Html Msg)
-view user model =
+view : SharedState -> Model -> (Title, Html Msg)
+view sharedState model =
   let
     ctaButtons =
-      case user of
-        Session.Admin _ -> 
+      case sharedState of
+        Private _ -> 
           [ button [ onClick LogOut ] [ text "log out" ]
           , button [ class "button-primary", onClick GoToDashboard ]
               [ text "Go To Dashboard" ]
           ]
 
-        Session.Guest ->
+        Public _ ->
           [ button [ onClick DisplayLogin ] [ text "log in" ]
           , button [ class "button-primary", onClick DisplaySignup ]
               [ text "sign up"]

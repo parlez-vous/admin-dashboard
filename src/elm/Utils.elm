@@ -1,12 +1,11 @@
 port module Utils exposing (logout)
 
-import Session
-import SharedState exposing (SharedStateUpdate(..))
+import SharedState exposing (SharedStateUpdate(..), PublicState)
 
 port removeToken : () -> Cmd msg
 
-logout : ( Cmd msg, SharedStateUpdate )
-logout =
+logout : PublicState -> ( Cmd msg, SharedStateUpdate )
+logout publicState =
   ( removeToken ()
-  , SharedState.UpdateSession Session.Guest
+  , SharedState.LogOut publicState
   )
