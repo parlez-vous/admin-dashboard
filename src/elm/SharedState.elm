@@ -28,6 +28,7 @@ type SharedStateUpdate
   = NoUpdate
   | SetAdmin Input.AdminWithToken
   | UpdateSites SiteDict
+  | InsertSite Input.Site
   | LogOut PublicState
 
 
@@ -92,6 +93,21 @@ update updateMsg state =
               | sites = RemoteData.Success sites
             }
 
+    InsertSite site ->
+      case state of
+        Public _ -> state
+
+        Private privateState ->
+          let
+            sites = case privateState.sites of
+              RemoteData.Success sites_ -> sites_
+              _ -> Dict.empty
+
+          in
+            Private
+              { privateState
+                | sites = RemoteData.Success <| Dict.insert site.id site sites
+              }
 
     LogOut publicState ->
       Public publicState

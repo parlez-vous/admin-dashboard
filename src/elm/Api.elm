@@ -3,6 +3,7 @@ module Api exposing
   , adminSignin
   , getAdminSession
   , getSites
+  , getSingleSite
   , registerSite
   )
 
@@ -173,6 +174,13 @@ getSites token api toMsg =
       token
       expect  
 
+
+getSingleSite :
+  Input.SessionToken ->
+  String ->
+  (RemoteData.WebData Input.Site -> msg) ->
+  Cmd msg
+getSingleSite token api toMsg = Cmd.none
 
 
 registerSite : 

@@ -18,7 +18,8 @@ import Url.Parser as Parser exposing (Parser, oneOf, s, int, (</>))
 
 
 import Routes.Home as Home
-import Routes.Dash as Dash 
+import Routes.Dash as Dash
+import Routes.Site as Site
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 
 
@@ -42,7 +43,7 @@ type alias Model =
 type Route
   = Home Home.Model
   | Dash Dash.Model
-  | Site Int
+  | Site Site.Model
   | NotFound
 
 
@@ -53,6 +54,7 @@ type Msg
   = UrlChange Url
   | HomeMsg Home.Model Home.Msg
   | DashMsg Dash.Model Dash.Msg
+  | SiteMsg Site.Model Site.Msg
 
 
 parser : Parser (Route -> a) a
@@ -60,7 +62,7 @@ parser =
   oneOf
     [ Parser.map (Home Home.init) Parser.top
     , Parser.map (Dash Dash.init) (s "dash")
-    , Parser.map Site (s "sites" </> int)
+    , Parser.map (Site << Site.init) (s "sites" </> int)
     ]
 
 fromUrl : Url -> Model
@@ -87,6 +89,9 @@ transitionTrigger route state =
     ( Dash dashModel , Private privateState ) ->
       Cmd.map (DashMsg dashModel) <| Dash.initRoute privateState
 
+    ( Site siteModel, Private privateState ) ->
+      Cmd.map (SiteMsg siteModel) <| Site.initRoute siteModel privateState
+
     -- redirect guests on private routes
     ( Dash _, Public { navKey } ) ->
       Nav.pushUrl navKey "/"
@@ -95,6 +100,7 @@ transitionTrigger route state =
       Nav.pushUrl navKey "/"
     
     _ -> Cmd.none
+      
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -139,12 +145,23 @@ update state msg model =
           , Cmd.none
           , SharedState.NoUpdate
           )
+    
+    SiteMsg siteModel siteMsg ->
+      ( Site siteModel
+      , Cmd.none
+      , SharedState.NoUpdate
+      )
 
 
 
 view : (Msg -> msg) -> SharedState -> Model -> Browser.Document msg
 view toMsg sharedState routerModel =
   let
+    redirectPage =
+      ( "Redirecting ..."
+      , div [] [ text "Redirecting ..."]
+      )
+
     ( title, html ) =
       case routerModel of
         Home homeModel ->
@@ -155,10 +172,7 @@ view toMsg sharedState routerModel =
 
         Dash dashModel ->
           case sharedState of
-            Public _ ->
-              ( "Redirecting ..."
-              , div [] [ text "Redirecting ..."]
-              )
+            Public _ -> redirectPage
             
             Private privateState -> 
               Dash.view privateState dashModel
@@ -166,11 +180,15 @@ view toMsg sharedState routerModel =
               |> Tuple.mapSecond (Html.map toMsg)
 
 
-        Site siteId ->
-          ( "Site: " ++ (String.fromInt siteId)
-          , div [ ] [ text "yey" ]
-          )
+        Site siteModel ->
+          case sharedState of
+            Public _ -> redirectPage
 
+            Private privateState ->
+              Site.view privateState siteModel
+              |> Tuple.mapSecond (Html.map <| SiteMsg siteModel)
+              |> Tuple.mapSecond (Html.map toMsg)
+            
         NotFound ->
           ( "Woops!", div [] [ text "404 Not Found"] )
 
