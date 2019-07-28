@@ -138,7 +138,7 @@ update state msg model =
               Dash.update privateState dashMsg dashModel
           in
           ( Dash newModel
-          , Cmd.map (DashMsg dashModel) dashCmd
+          , Cmd.map (DashMsg newModel) dashCmd
           , sharedStateUpdate
           )
 
@@ -149,10 +149,22 @@ update state msg model =
           )
     
     SiteMsg siteModel siteMsg ->
-      ( Site siteModel
-      , Cmd.none
-      , SharedState.NoUpdate
-      )
+      case state of
+        Private privateState ->
+          let
+            ( newModel, siteCmd, sharedStateUpdate ) =
+              Site.update privateState siteMsg siteModel
+          in
+            ( Site newModel
+            , Cmd.map (SiteMsg newModel) siteCmd
+            , sharedStateUpdate
+            )
+
+        Public _ ->
+          ( Site siteModel
+          , Cmd.none
+          , SharedState.NoUpdate
+          )
 
 
 

@@ -178,9 +178,22 @@ getSites token api toMsg =
 getSingleSite :
   Input.SessionToken ->
   String ->
+  Int ->
   (RemoteData.WebData Input.Site -> msg) ->
   Cmd msg
-getSingleSite token api toMsg = Cmd.none
+getSingleSite token api siteId toMsg =
+  let
+    siteId_ = String.fromInt siteId
+
+    siteDecoder = D.field "data" Input.siteDecoder
+
+    expect = Http.expectJson (RemoteData.fromResult >> toMsg) siteDecoder
+  in
+    secureGet
+      (api ++ adminPath ++ "/sites/" ++ siteId_)
+      token
+      expect
+
 
 
 registerSite : 

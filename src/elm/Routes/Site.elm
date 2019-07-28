@@ -40,7 +40,7 @@ transitionTrigger model { admin, api, navKey, sites } =
       let
         (_, token) = admin
       in
-        Api.getSingleSite token api SiteResponse
+        Api.getSingleSite token api model.siteId SiteResponse
 
 
     -- there are 2 cases to handle here:
@@ -58,7 +58,7 @@ transitionTrigger model { admin, api, navKey, sites } =
       case Dict.get model.siteId sites_ of
         Just site -> Cmd.none
         Nothing -> 
-          Api.getSingleSite token api SiteResponse
+          Api.getSingleSite token api model.siteId SiteResponse
     
 
     -- TODO: handle Loading state
