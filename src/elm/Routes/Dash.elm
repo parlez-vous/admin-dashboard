@@ -30,8 +30,6 @@ import UI.Toast as Toast
 
 -- MODEL
 
-type alias Sites = List Input.Site
-
 type alias Model =
   { hostname : String
   , toasties : Toast.ToastState
@@ -44,7 +42,7 @@ type Msg
   | SubmitDomain String
   | DomainSubmitted (Result Http.Error Input.Site)
   | ToastMsg (Toasty.Msg String)
-  | SitesResponse (WebData Sites)
+  | SitesResponse (WebData Input.Sites)
 
 
 
