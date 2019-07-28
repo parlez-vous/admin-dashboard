@@ -8,6 +8,7 @@ module Routes.Dash exposing
   )
 
 import Browser.Navigation as Nav
+import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
@@ -165,7 +166,7 @@ update state msg model =
         RemoteData.Success sites ->
           ( model
           , Cmd.none
-          , UpdateSites sites
+          , UpdateSites <| SharedState.toDict sites
           )
 
         _ ->
@@ -220,8 +221,8 @@ view state model =
         RemoteData.Loading  -> loading
         RemoteData.Success sites ->
           div []
-            [ text <| "You have " ++ (String.fromInt <| List.length sites) ++ " sites!"
-            , div [] <| List.map viewSite sites
+            [ text <| "You have " ++ (String.fromInt <| Dict.size sites) ++ " sites!"
+            , div [] <| List.map viewSite (Dict.values sites)
             ]
 
           

@@ -6,20 +6,28 @@ module SharedState exposing
   , update
   , init
   , toPrivate
+  , toDict
   )
   
 
 import Browser.Navigation
 import RemoteData exposing (WebData)
+import Dict exposing (Dict)
 
 import Api.Deserialize as Input
 
+
+type alias SiteDict = Dict Int Input.Site
+
+toDict : Input.Sites -> SiteDict
+toDict =
+  List.foldl (\site -> Dict.insert site.id site) Dict.empty
 
 
 type SharedStateUpdate
   = NoUpdate
   | SetAdmin Input.AdminWithToken
-  | UpdateSites Input.Sites
+  | UpdateSites SiteDict
   | LogOut PublicState
 
 
@@ -32,7 +40,7 @@ type alias PrivateState =
   { navKey  : Browser.Navigation.Key
   , api     : String
   , admin   : Input.AdminWithToken
-  , sites   : WebData Input.Sites
+  , sites   : WebData SiteDict
   }
 
 
