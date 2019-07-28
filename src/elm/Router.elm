@@ -60,9 +60,9 @@ type Msg
 parser : Parser (Route -> a) a
 parser =
   oneOf
-    [ Parser.map (Home Home.init) Parser.top
-    , Parser.map (Dash Dash.init) (s "dash")
-    , Parser.map (Site << Site.init) (s "sites" </> int)
+    [ Parser.map (Home Home.initModel) Parser.top
+    , Parser.map (Dash Dash.initModel) (s "dash")
+    , Parser.map (Site << Site.initModel) (s "sites" </> int)
     ]
 
 fromUrl : Url -> Model
@@ -87,10 +87,12 @@ transitionTrigger : Route -> SharedState -> Cmd Msg
 transitionTrigger route state =
   case ( route, state ) of
     ( Dash dashModel , Private privateState ) ->
-      Cmd.map (DashMsg dashModel) <| Dash.initRoute privateState
+      Dash.transitionTrigger privateState
+      |> Cmd.map (DashMsg dashModel)
 
     ( Site siteModel, Private privateState ) ->
-      Cmd.map (SiteMsg siteModel) <| Site.initRoute siteModel privateState
+      Site.transitionTrigger siteModel privateState
+      |> Cmd.map (SiteMsg siteModel)
 
     -- redirect guests on private routes
     ( Dash _, Public { navKey } ) ->

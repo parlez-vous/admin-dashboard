@@ -3,8 +3,8 @@
 module Routes.Site exposing
   ( Model
   , Msg
-  , init
-  , initRoute
+  , initModel
+  , transitionTrigger
   , update
   , view
   )
@@ -29,12 +29,12 @@ type alias Model =
 type Msg = SiteResponse (WebData Input.Site)
 
 
-init : Int -> Model
-init = Model
+initModel : Int -> Model
+initModel = Model
 
 
-initRoute : Model -> PrivateState -> Cmd Msg
-initRoute model { admin, api, navKey, sites } =
+transitionTrigger : Model -> PrivateState -> Cmd Msg
+transitionTrigger model { admin, api, navKey, sites } =
   case sites of
     RemoteData.NotAsked ->
       let

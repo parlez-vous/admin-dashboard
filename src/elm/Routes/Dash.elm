@@ -1,8 +1,8 @@
 module Routes.Dash exposing
   ( Model
   , Msg
-  , init
-  , initRoute
+  , initModel
+  , transitionTrigger
   , update
   , view
   )
@@ -46,15 +46,15 @@ type Msg
 
 
 
-init : Model
-init =
+initModel : Model
+initModel =
   { hostname = ""
   , toasties = Toast.init
   }
 
 
-initRoute : PrivateState -> Cmd Msg
-initRoute { admin, api, navKey } =
+transitionTrigger : PrivateState -> Cmd Msg
+transitionTrigger { admin, api, navKey } =
   let
     ( _, token ) = admin
   in

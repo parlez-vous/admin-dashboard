@@ -1,7 +1,7 @@
 port module Routes.Home exposing
   ( Model
   , Msg
-  , init
+  , initModel
   , update
   , view
   )
@@ -63,8 +63,8 @@ type Msg
   | LogOut
 
 
-init : Model
-init = FormHidden
+initModel : Model
+initModel = FormHidden
 
 -- UPDATE
 
