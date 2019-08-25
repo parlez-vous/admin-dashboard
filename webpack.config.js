@@ -51,7 +51,8 @@ module.exports = {
         test: /\.sass$/,
         use: [
           ...commonCssLoaders,
-          'sass-loader'
+          'postcss-loader',
+          'sass-loader',
         ]
       },
       {
