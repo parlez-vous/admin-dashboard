@@ -1,0 +1,53 @@
+.btn__primary {
+	background-color: #fa544b;
+	color: white;
+	border: none;
+}
+
+.btn__primary:hover {
+	background-color: rgba(250, 84, 75, 0.93);
+	color: white;
+}
+
+.btn__primary.disabled {
+	background-color: black;
+}
+
+.toast__container {
+	position: fixed;
+	top: 5%;
+	left: 45%;
+}
+
+.toast__container > ol {
+	list-style-type: none;
+	display: flex;
+	flex-direction: column-reverse;
+}
+
+.toast__container .toast__item {
+	padding: 1em 1.3em;
+	background-color: #fa544b;
+	color: white;
+	border-radius: 3px;
+}
+
+@keyframes donut-spin {
+	0% {
+		transform: rotate(0deg);
+	}
+
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+.loading__donut {
+	display: inline-block;
+	border: 4px solid rgba(0, 0, 0, 0.1);
+	border-left-color: #fa544b;
+	border-radius: 50%;
+	width: 30px;
+	height: 30px;
+	animation: donut-spin 1.2s linear infinite;
+}

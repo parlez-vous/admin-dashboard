@@ -1,6 +1,6 @@
 'use strict';
 
-require('./css/custom.sass')
+require('./css/custom.css')
 
 const Elm = require('./elm/Main.elm').Elm;
 

@@ -21,11 +21,6 @@ const copyArgs = (args) =>
     {}
   )
   
-const commonCssLoaders = [
-  'style-loader',
-  'css-loader',
-]
-  
 module.exports = {
   mode,
   
@@ -44,16 +39,12 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(css|scss)$/,
-        use: commonCssLoaders,
-      },
-      {
-        test: /\.sass$/,
+        test: /\.css$/,
         use: [
-          ...commonCssLoaders,
-          'postcss-loader',
-          'sass-loader',
-        ]
+          'style-loader',
+          'css-loader',
+          'postcss-loader'
+        ],
       },
       {
         test:    /\.elm$/,
