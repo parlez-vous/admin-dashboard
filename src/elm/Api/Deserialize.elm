@@ -43,6 +43,8 @@ type alias Site =
   -- This will always be the admin associated with the
   -- current session
   , adminId  : Int
+
+  , expiresBy : Time.Posix
   }
 
 
@@ -71,7 +73,7 @@ adminAndTokenDecoder =
 
 siteDecoder : Decoder Site
 siteDecoder =
-  D.map7 Site
+  D.map8 Site
     (D.field "id" D.int)
     (D.field "hostname" D.string)
     (D.field "verified" D.bool)
@@ -79,3 +81,4 @@ siteDecoder =
     (D.field "created_at" Iso8601.decoder)
     (D.field "updated_at" Iso8601.decoder)
     (D.field "admin_user_id" D.int)
+    (D.field "expires_by" Iso8601.decoder)
