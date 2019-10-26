@@ -13,7 +13,7 @@ import Browser
 import Browser.Navigation as Nav
 import RemoteData
 import Url exposing (Url)
-import Url.Parser as Parser exposing (Parser, oneOf, s, int, (</>))
+import Url.Parser as Parser exposing (Parser, oneOf, int, (</>))
 
 
 
@@ -61,8 +61,8 @@ parser : Parser (Route -> a) a
 parser =
   oneOf
     [ Parser.map (Home Home.initModel) Parser.top
-    , Parser.map (Dash Dash.initModel) (s "dash")
-    , Parser.map (Site << Site.initModel) (s "sites" </> int)
+    , Parser.map (Dash Dash.initModel) (Parser.s "dash")
+    , Parser.map (Site << Site.initModel) (Parser.s "sites" </> int)
     ]
 
 fromUrl : Url -> Model
