@@ -20,6 +20,7 @@ import UI.Icons exposing (logo)
 import Utils exposing (logout)
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 import UI.Loader as Loader
+import UI.Button as Btn
 
 
 
@@ -314,8 +315,8 @@ view sharedState model =
 
         Public _ ->
           [ button [ onClick DisplayLogin ] [ text "log in" ]
-          , button [ class "button-primary", onClick DisplaySignup ]
-              [ text "sign up"]
+          , Btn.button DisplaySignup "sign up"
+            |> Btn.toHtml
           ]
 
 
