@@ -67,6 +67,7 @@ toHtml (Button opts msg label) =
       , "hover:bg-gray-400"
       , "hover:text-gray-700"
       , "rounded"
+      , "mx-4"
       ]
 
     conditionalClasses = classList

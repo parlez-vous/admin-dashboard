@@ -75,13 +75,6 @@ html > *, body > * {
  *
  *   Home.elm styles
  ** */
-.home-page .navbar {
-	margin-top: 2em;
-	margin-right: 2em;
-	display: flex;
-	justify-content: flex-end;
-}
-
 .home-page .navbar > button:first-child {
 	margin-right: 2em;
 }

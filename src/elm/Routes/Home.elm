@@ -21,6 +21,7 @@ import Utils exposing (logout)
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 import UI.Loader as Loader
 import UI.Button as Btn
+import UI.Hnav exposing (hnav)
 
 
 
@@ -309,20 +310,18 @@ view sharedState model =
       case sharedState of
         Private _ -> 
           [ button [ onClick LogOut ] [ text "log out" ]
-          , button [ class "button-primary", onClick GoToDashboard ]
-              [ text "Go To Dashboard" ]
+          , Btn.toHtml <| Btn.button GoToDashboard "Go To Dashboard"
           ]
 
         Public _ ->
           [ button [ onClick DisplayLogin ] [ text "log in" ]
-          , Btn.button DisplaySignup "sign up"
-            |> Btn.toHtml
+          , Btn.toHtml <| Btn.button DisplaySignup "sign up"
           ]
 
 
     html =
       div [ class "home-page" ]
-        [ div [ class "navbar" ] ctaButtons
+        [ hnav ctaButtons
         , div [ class "container" ]
             [ div [ class "row" ]
                 [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
