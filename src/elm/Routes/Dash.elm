@@ -194,7 +194,8 @@ view state model =
     welcomeMsg = "Hello " ++ admin.username ++ "! Looks like you haven't registered any sites yet."
 
     submitBtn = 
-      U.button (SubmitDomain model.hostname) "Submit"
+      U.button "Submit"
+      |> U.onClick (SubmitDomain model.hostname)
 
     loading =
       div [ class "loading-container" ]
