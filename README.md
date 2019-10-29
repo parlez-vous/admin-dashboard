@@ -11,9 +11,12 @@ Need to connect this with the [server](https://github.com/parlez-vous/server)
 
 
 
-## Todo:
-- remove unused css
+## Architectural Inspiration
 
-https://github.com/webpack-contrib/mini-css-extract-plugin
+- [elm-shared-state](https://github.com/ohanhi/elm-shared-state)
+  - This, I would say, is the app from which I took the most inspiration from. I didn't even change the type names around shared state.
 
-https://github.com/FullHuman/purgecss-webpack-plugin
+- [elm-shared-login](https://github.com/jxxcarlson/elm-shared-login)
+  - Same idea
+
+- [elm-spa-example](https://github.com/rtfeldman/elm-spa-example)
