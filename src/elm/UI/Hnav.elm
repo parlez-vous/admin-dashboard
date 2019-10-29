@@ -11,8 +11,6 @@ import UI.Icons exposing (logo)
 hnav : List (Html msg) -> Html msg
 hnav children =
   header [ class "w-auto h-20 pt-6 pb-2 px-4 flex justify-between" ]
-    [ div []
-        [ logo "45"
-        ]
+    [ logo "45"
     , nav [] children
     ]
