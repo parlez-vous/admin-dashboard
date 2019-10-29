@@ -15,8 +15,9 @@ type alias Signup =
   , passwordConfirm : String
   }
 
-type alias Signin =
-  { username : String
+type alias Signin a =
+  { a |
+    username : String
   , password : String
   }
 

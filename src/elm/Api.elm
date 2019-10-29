@@ -119,7 +119,7 @@ adminSignup api toMsg data =
 
 
 
-adminSignin : String -> ToMsg Input.AdminWithToken msg -> Output.Signin -> Cmd msg
+adminSignin : String -> ToMsg Input.AdminWithToken msg -> Output.Signin a -> Cmd msg
 adminSignin api toMsg data =
   let
     signinJson =
