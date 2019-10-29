@@ -20,6 +20,8 @@ import Url.Parser as Parser exposing (Parser, oneOf, int, (</>))
 import Routes.Home as Home
 import Routes.Dash as Dash
 import Routes.Site as Site
+import Routes.Login as Login
+import Routes.Signup as Signup
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 
 
@@ -44,6 +46,8 @@ type Route
   = Home Home.Model
   | Dash Dash.Model
   | Site Site.Model
+  | Login Login.Model
+  | Signup Signup.Model
   | NotFound
 
 
@@ -55,6 +59,8 @@ type Msg
   | HomeMsg Home.Model Home.Msg
   | DashMsg Dash.Model Dash.Msg
   | SiteMsg Site.Model Site.Msg
+  | LoginMsg Login.Model Login.Msg
+  | SignupMsg Signup.Model Signup.Msg
 
 
 parser : Parser (Route -> a) a
@@ -63,6 +69,8 @@ parser =
     [ Parser.map (Home Home.initModel) Parser.top
     , Parser.map (Dash Dash.initModel) (Parser.s "dash")
     , Parser.map (Site << Site.initModel) (Parser.s "sites" </> int)
+    , Parser.map (Login Login.initModel) (Parser.s "login")
+    , Parser.map (Signup Signup.initModel) (Parser.s "signup")
     ]
 
 fromUrl : Url -> Model
@@ -100,6 +108,12 @@ transitionTrigger route state =
 
     ( Site _, Public { navKey } ) ->
       Nav.pushUrl navKey "/"
+
+    ( Login _, Private { navKey } ) ->
+      Nav.pushUrl navKey "/dash"
+
+    ( Signup _, Private { navKey } ) ->
+      Nav.pushUrl navKey "/dash"
     
     _ -> Cmd.none
       
@@ -166,6 +180,28 @@ update state msg model =
           , SharedState.NoUpdate
           )
 
+    LoginMsg loginModel loginMsg ->
+      let
+        ( newModel, loginCmd, sharedStateUpdate ) = 
+          Login.update state loginMsg loginModel
+      
+      in
+        ( Login newModel
+        , Cmd.map (LoginMsg newModel) loginCmd
+        , sharedStateUpdate
+        )
+
+
+    -- Placeholder for now
+    _ ->
+      ( model, Cmd.none, SharedState.NoUpdate )
+
+    
+{-- Generalize the following
+  Site.view privateState siteModel
+    |> Tuple.mapSecond (Html.map <| SiteMsg siteModel)
+    |> Tuple.mapSecond (Html.map toMsg)
+--}
 
 
 view : (Msg -> msg) -> SharedState -> Model -> Browser.Document msg
@@ -202,9 +238,22 @@ view toMsg sharedState routerModel =
               Site.view privateState siteModel
               |> Tuple.mapSecond (Html.map <| SiteMsg siteModel)
               |> Tuple.mapSecond (Html.map toMsg)
-            
+
         NotFound ->
           ( "Woops!", div [] [ text "404 Not Found"] )
+
+        Login loginModel ->
+          case sharedState of
+            Private _ -> redirectPage
+
+            Public publicState ->
+              Login.view publicState loginModel
+              |> Tuple.mapSecond (Html.map <| LoginMsg loginModel)
+              |> Tuple.mapSecond (Html.map toMsg)
+          
+
+        _ ->
+          ( "Placeholder", div [] [ text "Hello :)" ])
 
   in
   { title = title ++ " | Parlez-Vous "

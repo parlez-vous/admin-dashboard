@@ -17,10 +17,10 @@ import Api
 import Api.Output as Output
 import Api.Deserialize as Input
 import UI.Icons exposing (logo)
-import Utils exposing (logout)
+import Utils exposing (logout, getApi)
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 import UI.Loader as Loader
-import UI.Button as Btn
+import UI.Button as Btn exposing (link)
 import UI.Hnav exposing (hnav)
 
 
@@ -30,7 +30,6 @@ import UI.Hnav exposing (hnav)
 
 type FormType
   = SignupForm Output.Signup
-  | SigninForm Output.Signin
 
 type FormState
   = ShowForm FormType
@@ -56,8 +55,7 @@ type FormMsg
 
 
 type Msg
-  = DisplayLogin
-  | DisplaySignup
+  = DisplaySignup
   | Form FormMsg
   | SubmitForm FormType
   | SubmittedForm (Result Http.Error Input.AdminWithToken)
@@ -84,17 +82,6 @@ updateFormField currentForm msg =
         PasswordConfirm s ->
           SignupForm { data | passwordConfirm = s }
 
-    SigninForm data ->
-      case msg of
-        UsernameInput s ->
-          SigninForm { data | username = s }
-
-        PasswordInput s ->
-          SigninForm { data | password = s }
-
-
-        _ ->
-          currentForm
 
 
 getNavKey : SharedState -> Nav.Key
@@ -104,33 +91,16 @@ getNavKey sharedState =
     Private { navKey } -> navKey
 
 
-getApi : SharedState -> String
-getApi sharedState =
-  case sharedState of
-    Public { api } -> api
-    Private { api } -> api
-    
-
 handleSubmitForm : String -> FormType -> Cmd Msg
 handleSubmitForm api form =
   case form of 
     SignupForm data ->
       Api.adminSignup api SubmittedForm data
 
-    SigninForm data ->
-      Api.adminSignin api SubmittedForm data
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update sharedState msg model =
   case msg of
-    DisplayLogin ->
-        let emptyForm = SigninForm <| Output.Signin "" ""
-        in
-          ( ShowForm emptyForm
-          , Cmd.none
-          , SharedState.NoUpdate
-          )
-
     DisplaySignup ->
       let emptyForm = SignupForm <| Output.Signup "" "" ""
       in
@@ -252,10 +222,6 @@ form_ model =
               String.length data.password > 6 &&
               data.password == data.passwordConfirm
 
-            SigninForm data ->
-              String.length data.username > 3 &&
-              String.length data.password > 6
-
         _ -> False
 
     submitBtn =
@@ -290,9 +256,6 @@ form_ model =
                 , input [ id "password-confirm-input", type_ "password", onInput (Form << PasswordConfirm) ] [] 
                 , submitBtn
                 ]
-
-            SigninForm data ->
-              List.append (baseForm data) [ submitBtn ]
           
   in
     Html.form
@@ -310,12 +273,14 @@ view sharedState model =
       case sharedState of
         Private _ -> 
           [ button [ onClick LogOut ] [ text "log out" ]
-          , Btn.toHtml <| Btn.button GoToDashboard "Go To Dashboard"
+          , Btn.button "Go To Dashboard"
+            |> Btn.onClick GoToDashboard
+            |> Btn.toHtml
           ]
 
         Public _ ->
-          [ button [ onClick DisplayLogin ] [ text "log in" ]
-          , Btn.toHtml <| Btn.button DisplaySignup "sign up"
+          [ Btn.toHtml <| link Btn.Login "log in"
+          , Btn.toHtml <| link Btn.Signup "sign up"
           ]
 
 
