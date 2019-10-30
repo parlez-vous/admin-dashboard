@@ -17,7 +17,7 @@ import Api
 import Api.Output as Output
 import Api.Deserialize as Input
 import UI.Icons exposing (logo)
-import Utils exposing (logout, getApi)
+import Utils exposing (logout, getApi, getNavKey)
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 import UI.Loader as Loader
 import UI.Button as Btn exposing (link)
@@ -82,13 +82,6 @@ updateFormField currentForm msg =
         PasswordConfirm s ->
           SignupForm { data | passwordConfirm = s }
 
-
-
-getNavKey : SharedState -> Nav.Key
-getNavKey sharedState =
-  case sharedState of
-    Public { navKey } -> navKey
-    Private { navKey } -> navKey
 
 
 handleSubmitForm : String -> FormType -> Cmd Msg
