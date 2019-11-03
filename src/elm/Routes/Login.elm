@@ -6,18 +6,21 @@ module Routes.Login exposing
   , update
   )
 
+import Browser.Navigation as Nav
 import Html as H exposing (div, text, h1, Html)
 import Html.Attributes as A exposing (class, value)
 import Html.Events exposing (onInput, onSubmit)
 import Http
+import Toasty
 
 import Api
 import Api.Deserialize as Input
 import SharedState exposing (SharedState, PublicState, SharedStateUpdate)
 import UI.Hnav exposing (hnav)
 import UI.Button as Btn exposing (button, link)
+import UI.Toast as Toast
 import Utils
-  
+
 
 type alias Model = 
   { username : String
@@ -25,6 +28,8 @@ type alias Model =
 
   -- maybe rename to `locked`?
   , formSubmitting : Bool
+
+  , toasties : Toast.ToastState
   }
 
 
@@ -33,10 +38,16 @@ type Msg
   | UpdatePassword String
   | SubmitForm
   | FormSubmitted (Result Http.Error Input.AdminWithToken)
+  | ToastMsg (Toasty.Msg String)
 
 
 initModel : Model
-initModel = Model "" "" False
+initModel =
+  { username = ""
+  , password = ""
+  , formSubmitting = False
+  , toasties = Toast.init
+  }
 
 
 
@@ -69,11 +80,54 @@ update state msg model =
         , SharedState.NoUpdate
         )
 
-    FormSubmitted r ->
+    FormSubmitted result ->
+      case result of
+        Ok adminWithToken -> 
+          let
+            navKey = Utils.getNavKey state
+
+            commands =
+              Cmd.batch
+                [ Utils.setToken <| Tuple.second adminWithToken
+                , Nav.pushUrl navKey "/dash"
+                ]
+          in
+          ( model
+          , commands
+          , SharedState.SetAdmin adminWithToken
+          )
+
+        Err e ->
+          let
+            _ = Debug.log "FormSubmitted" result
+
+            _ = Debug.log "Current Toasties" model.toasties
+
+            toastMsg = "Something Went Wrong"
+
+            ( newModel, cmd ) = ( model, Cmd.none )
+              |> Toasty.addToast Toast.config ToastMsg toastMsg
+            
+            _ = Debug.log "New Toasties" newModel.toasties
+
+            _ = Debug.log "-----" "------"
+          in
+            (newModel, cmd, SharedState.NoUpdate)
+
+    ToastMsg toastMsg ->
       let
-        _ = Debug.log "FormSubmitted" r
+        _ = Debug.log "ToastMsg" toastMsg
+
+        _ = Debug.log "Current Toasties" model.toasties
+
+        ( newModel, cmd ) = model
+          |> Toasty.update Toast.config ToastMsg toastMsg
+
+        _ = Debug.log "New Toasties" newModel.toasties
+
+        _ = Debug.log "========" "====="
       in
-      (model, Cmd.none, SharedState.NoUpdate)
+        ( newModel, cmd, SharedState.NoUpdate )
 
 
 
@@ -85,9 +139,7 @@ type alias Title = String
 loginForm : Model -> Html Msg
 loginForm model =
   let
-    toClass = String.concat << List.intersperse " "
-
-    classes = class <| toClass
+    classes = Utils.toClass
       [ "border"
       , "border-solid"
       , "border-gray-400"
@@ -151,7 +203,8 @@ view _ model =
             [ h1 [ class "text-center mb-6 text-2xl text-gray-900" ] [ text "Log Into Parlez Vous" ]
             , loginForm model
             ]
-        ] 
+        , Toast.view ToastMsg model.toasties
+        ]
 
   in
   ( "Login", markup )
