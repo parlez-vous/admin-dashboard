@@ -26,22 +26,6 @@ import SharedState exposing (SharedState(..), SharedStateUpdate)
 
 
 
-{-
-Once the application gets more complex,
-you can import the models from various routes
-
-import Routes.Home as Home
-import Routes.Settings as Settings
-
-type alias Model =
-  { home     : Home.Model
-  , settings : Settings.Model
-  , .....
-  , route    : Route
-  }
--}
-
-
 type Route
   = Home Home.Model
   | Dash Dash.Model
@@ -56,11 +40,11 @@ type alias Model = Route
 
 type Msg
   = UrlChange Url
-  | HomeMsg Home.Model Home.Msg
-  | DashMsg Dash.Model Dash.Msg
-  | SiteMsg Site.Model Site.Msg
-  | LoginMsg Login.Model Login.Msg
-  | SignupMsg Signup.Model Signup.Msg
+  | HomeMsg Home.Msg
+  | DashMsg Dash.Msg
+  | SiteMsg Site.Msg
+  | LoginMsg Login.Msg
+  | SignupMsg Signup.Msg
 
 
 parser : Parser (Route -> a) a
@@ -96,11 +80,11 @@ transitionTrigger route state =
   case ( route, state ) of
     ( Dash dashModel , Private privateState ) ->
       Dash.transitionTrigger privateState
-      |> Cmd.map (DashMsg dashModel)
+      |> Cmd.map DashMsg
 
     ( Site siteModel, Private privateState ) ->
       Site.transitionTrigger siteModel privateState
-      |> Cmd.map (SiteMsg siteModel)
+      |> Cmd.map SiteMsg
 
     -- redirect guests on private routes
     ( Dash _, Public { navKey } ) ->
@@ -121,8 +105,8 @@ transitionTrigger route state =
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update state msg model =
-  case msg of
-    UrlChange url -> 
+  case (msg, model) of
+    ( UrlChange url, _ ) -> 
       let
         route = fromUrl url
 
@@ -134,17 +118,17 @@ update state msg model =
       , SharedState.NoUpdate
       )
       
-    HomeMsg homeModel homeMsg ->
+    ( HomeMsg homeMsg, Home homeModel ) ->
       let 
         ( newModel, homeCmd, sharedStateUpdate ) =
           Home.update state homeMsg homeModel
       in
         ( Home newModel
-        , Cmd.map (HomeMsg newModel) homeCmd
+        , Cmd.map HomeMsg homeCmd
         , sharedStateUpdate
         )
 
-    DashMsg dashModel dashMsg ->
+    ( DashMsg dashMsg, Dash dashModel ) ->
       case state of
         Private privateState ->
           let
@@ -152,7 +136,7 @@ update state msg model =
               Dash.update privateState dashMsg dashModel
           in
           ( Dash newModel
-          , Cmd.map (DashMsg newModel) dashCmd
+          , Cmd.map DashMsg dashCmd
           , sharedStateUpdate
           )
 
@@ -162,7 +146,7 @@ update state msg model =
           , SharedState.NoUpdate
           )
     
-    SiteMsg siteModel siteMsg ->
+    ( SiteMsg siteMsg, Site siteModel ) ->
       case state of
         Private privateState ->
           let
@@ -170,7 +154,7 @@ update state msg model =
               Site.update privateState siteMsg siteModel
           in
             ( Site newModel
-            , Cmd.map (SiteMsg newModel) siteCmd
+            , Cmd.map SiteMsg siteCmd
             , sharedStateUpdate
             )
 
@@ -180,14 +164,14 @@ update state msg model =
           , SharedState.NoUpdate
           )
 
-    LoginMsg loginModel loginMsg ->
+    ( LoginMsg loginMsg, Login loginModel ) ->
       let
         ( newModel, loginCmd, sharedStateUpdate ) = 
           Login.update state loginMsg loginModel
       
       in
         ( Login newModel
-        , Cmd.map (LoginMsg newModel) loginCmd
+        , Cmd.map LoginMsg loginCmd
         , sharedStateUpdate
         )
 
@@ -216,7 +200,7 @@ view toMsg sharedState routerModel =
       case routerModel of
         Home homeModel ->
           Home.view sharedState homeModel
-          |> Tuple.mapSecond (Html.map <| HomeMsg homeModel)
+          |> Tuple.mapSecond (Html.map HomeMsg)
           |> Tuple.mapSecond (Html.map toMsg)
           
 
@@ -226,7 +210,7 @@ view toMsg sharedState routerModel =
             
             Private privateState -> 
               Dash.view privateState dashModel
-              |> Tuple.mapSecond (Html.map <| DashMsg dashModel)
+              |> Tuple.mapSecond (Html.map DashMsg)
               |> Tuple.mapSecond (Html.map toMsg)
 
 
@@ -236,7 +220,7 @@ view toMsg sharedState routerModel =
 
             Private privateState ->
               Site.view privateState siteModel
-              |> Tuple.mapSecond (Html.map <| SiteMsg siteModel)
+              |> Tuple.mapSecond (Html.map SiteMsg)
               |> Tuple.mapSecond (Html.map toMsg)
 
         NotFound ->
@@ -248,7 +232,7 @@ view toMsg sharedState routerModel =
 
             Public publicState ->
               Login.view publicState loginModel
-              |> Tuple.mapSecond (Html.map <| LoginMsg loginModel)
+              |> Tuple.mapSecond (Html.map LoginMsg)
               |> Tuple.mapSecond (Html.map toMsg)
           
 
