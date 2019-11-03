@@ -12,6 +12,8 @@ import Html exposing (Html, text)
 import Html.Attributes as Attributes exposing (class, classList, href)
 import Html.Events as E
 
+import Utils
+
 
 
 
@@ -105,9 +107,6 @@ toHref route = case route of
 toHtml : Button msg -> Html msg
 toHtml (Button opts label) =
   let
-    toClass : List String -> String
-    toClass = String.concat << List.intersperse " "
-
     sharedStyles = 
       [ "font-bold"
       , "py-2"
@@ -139,7 +138,7 @@ toHtml (Button opts label) =
       ]
 
     defaultAttrs = 
-      [ class <| toClass buttonStyles
+      [ Utils.toClass buttonStyles
       , conditionalClasses
       , Attributes.disabled opts.disabled
       ]
