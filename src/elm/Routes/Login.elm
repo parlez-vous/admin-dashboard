@@ -99,33 +99,17 @@ update state msg model =
 
         Err e ->
           let
-            _ = Debug.log "FormSubmitted" result
-
-            _ = Debug.log "Current Toasties" model.toasties
-
             toastMsg = "Something Went Wrong"
 
             ( newModel, cmd ) = ( model, Cmd.none )
               |> Toasty.addToast Toast.config ToastMsg toastMsg
-            
-            _ = Debug.log "New Toasties" newModel.toasties
-
-            _ = Debug.log "-----" "------"
           in
             (newModel, cmd, SharedState.NoUpdate)
 
     ToastMsg toastMsg ->
       let
-        _ = Debug.log "ToastMsg" toastMsg
-
-        _ = Debug.log "Current Toasties" model.toasties
-
         ( newModel, cmd ) = model
           |> Toasty.update Toast.config ToastMsg toastMsg
-
-        _ = Debug.log "New Toasties" newModel.toasties
-
-        _ = Debug.log "========" "====="
       in
         ( newModel, cmd, SharedState.NoUpdate )
 
