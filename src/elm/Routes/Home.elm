@@ -1,4 +1,4 @@
-port module Routes.Home exposing
+module Routes.Home exposing
   ( Model
   , Msg
   , initModel
@@ -17,7 +17,7 @@ import Api
 import Api.Output as Output
 import Api.Deserialize as Input
 import UI.Icons exposing (logo)
-import Utils exposing (logout, getApi, getNavKey)
+import Utils exposing (logout, getApi, getNavKey, setToken)
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 import UI.Loader as Loader
 import UI.Button as Btn exposing (link)
@@ -41,7 +41,7 @@ type alias Model = FormState
 
 -- PORTS
 
-port setToken : String -> Cmd msg
+
 
 
 
