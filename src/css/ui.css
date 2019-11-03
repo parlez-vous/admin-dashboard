@@ -1,36 +1,9 @@
-.btn__primary {
-	background-color: #fa544b;
-	color: white;
-	border: none;
-}
-
-.btn__primary:hover {
-	background-color: rgba(250, 84, 75, 0.93);
-	color: white;
-}
-
-.btn__primary.disabled {
-	background-color: black;
-}
-
-.toast__container {
-	position: fixed;
-	top: 5%;
-	left: 45%;
-}
-
-.toast__container > ol {
-	list-style-type: none;
-	display: flex;
-	flex-direction: column-reverse;
-}
-
-.toast__container .toast__item {
-	padding: 1em 1.3em;
-	background-color: #fa544b;
-	color: white;
-	border-radius: 3px;
-}
+/*
+ * TODO:
+ * move this over to custom.css
+ * and use tailwind's @apply directive
+ * to leverage its utility classes
+*/
 
 @keyframes donut-spin {
 	0% {
