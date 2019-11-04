@@ -9,8 +9,9 @@ module Api.Output exposing
   )
 
 
-type alias Signup = 
-  { username        : String
+type alias Signup a = 
+  { a |
+    username        : String
   , password        : String
   , passwordConfirm : String
   }

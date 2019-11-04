@@ -96,7 +96,7 @@ secureGet endpoint token expect =
     }
 
 
-adminSignup : String -> ToMsg Input.AdminWithToken msg -> Output.Signup -> Cmd msg
+adminSignup : String -> ToMsg Input.AdminWithToken msg -> Output.Signup a -> Cmd msg
 adminSignup api toMsg data =
   let
     signupJson = 
@@ -114,7 +114,7 @@ adminSignup api toMsg data =
     Http.post
       { body = body
       , expect = expect
-      , url = api ++ "/signup"
+      , url = api ++ adminPath ++ "/signup"
       }
 
 
