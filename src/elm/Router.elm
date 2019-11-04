@@ -175,6 +175,15 @@ update state msg model =
         , sharedStateUpdate
         )
 
+    ( SignupMsg signupMsg, Signup signupModel ) ->
+      let
+        ( newModel, signupCmd, sharedStateUpdate ) =
+          Signup.update state signupMsg signupModel
+      in
+        ( Signup newModel
+        , Cmd.map SignupMsg signupCmd
+        , sharedStateUpdate
+        )
 
     -- Placeholder for now
     _ ->
@@ -223,21 +232,30 @@ view toMsg sharedState routerModel =
               |> Tuple.mapSecond (Html.map SiteMsg)
               |> Tuple.mapSecond (Html.map toMsg)
 
-        NotFound ->
-          ( "Woops!", div [] [ text "404 Not Found"] )
-
         Login loginModel ->
           case sharedState of
             Private _ -> redirectPage
 
             Public publicState ->
               Login.view publicState loginModel
-              |> Tuple.mapSecond (Html.map LoginMsg)
-              |> Tuple.mapSecond (Html.map toMsg)
-          
+                |> Tuple.mapSecond (Html.map LoginMsg)
+                |> Tuple.mapSecond (Html.map toMsg)
 
-        _ ->
-          ( "Placeholder", div [] [ text "Hello :)" ])
+        Signup signupModel ->
+          case sharedState of
+            Private _ -> redirectPage
+
+            Public publicState ->
+              Signup.view publicState signupModel
+                |> Tuple.mapSecond (Html.map SignupMsg)
+                |> Tuple.mapSecond (Html.map toMsg)
+
+
+
+        NotFound ->
+          ( "Woops!", div [] [ text "404 Not Found"] )
+
+          
 
   in
   { title = title ++ " | Parlez-Vous "
