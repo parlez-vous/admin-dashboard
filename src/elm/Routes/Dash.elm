@@ -26,6 +26,7 @@ import UI.Icons exposing (bell, logo, user, cog)
 import UI.Button as U
 import UI.Loader as Loader
 import UI.Toast as Toast
+import UI.Nav exposing (withVnav)
 
 
 -- MODEL
@@ -228,29 +229,18 @@ view state model =
             
 
     html =
-      div [ class "admin-page vertical-nav-container" ]
-
-        -- Vertical Nav
-        [ nav [ class "vertical-navbar" ]
-            [ div [ class "logo-container" ] [ logo "50" ]
-            , div [ class "nav-primary-content"] [  ]
-            
-            , div [ class "nav-secondary-content" ]
-                [ bell
-                , div [ class "user-container" ] [ user ] 
-                , cog
-                ]
-            ]
-
-        -- Content
-        , div [ class "content" ]
+      withVnav
+        (div [ class "nav-primary-content"] [  ])
+        (div [ class "nav-secondary-content" ]
+          [ bell
+          , div [ class "user-container" ] [ user ] 
+          , cog
+          ])
+        (div [ class "content" ]
           [ h1 [] [ text "Websites" ]
           , content
           , button [ class "logout", onClick LogOut ] [ text "Log Out" ]
-          ]
-
-        , Toast.view ToastMsg model.toasties
-        ]
-
+          , Toast.view ToastMsg model.toasties
+          ])
   in 
   ( "Admin Panel", html )

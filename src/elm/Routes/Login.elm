@@ -16,7 +16,7 @@ import Toasty
 import Api
 import Api.Deserialize as Input
 import SharedState exposing (SharedState, PublicState, SharedStateUpdate)
-import UI.Hnav exposing (hnav)
+import UI.Nav exposing (hnav)
 import UI.Button as Btn exposing (button, link)
 import UI.Toast as Toast
 import Utils

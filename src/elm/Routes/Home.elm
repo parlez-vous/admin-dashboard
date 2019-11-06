@@ -16,12 +16,11 @@ import Http
 import Api
 import Api.Output as Output
 import Api.Deserialize as Input
-import UI.Icons exposing (logo)
 import Utils exposing (logout, getApi, getNavKey)
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 import UI.Loader as Loader
 import UI.Button as Btn exposing (link)
-import UI.Hnav exposing (hnav)
+import UI.Nav exposing (withHnav)
 
 
 
@@ -106,16 +105,11 @@ view sharedState model =
 
 
     html =
-      div [ class "home-page" ]
-        [ hnav ctaButtons
-        , div [ class "container" ]
-            [ div [ class "row" ]
-                [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
-                , pre [ class "center-text" ] [ text "work in progress" ]
-                , div [ class "logo-container" ] [ logo "125" ]
-                , p [ class "center-text" ] [ text "The fastest way to engage your audience" ]
-                ]
-            ]
+      withHnav
+        ctaButtons
+        [ h1 [ class "center-text slogan" ] [ text "Enable Conversations"]
+        , pre [ class "center-text" ] [ text "work in progress" ]
+        , p [ class "center-text" ] [ text "The fastest way to engage your audience" ]
         ]
 
   in
