@@ -3,8 +3,7 @@ Horizontal Nav
 --}
 
 module UI.Nav exposing
-  ( hnav
-  , vnav
+  ( vnav
   , withVnav
   , withHnav
   )

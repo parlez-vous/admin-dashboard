@@ -16,7 +16,7 @@ import Toasty
 
 import Api
 import Api.Deserialize as Input
-import UI.Nav exposing (hnav)
+import UI.Nav exposing (withHnav)
 import UI.Button as Btn exposing (button, link)
 import UI.Toast as Toast
 import Utils
@@ -204,9 +204,9 @@ view : PublicState -> Model -> (Title, Html Msg)
 view _ model =
   let
     markup =
-      div [ ]
-        [ hnav [ Btn.toHtml <| link Btn.Signup "sign up" ]
-        , div [ class "flex justify-center" ]
+      withHnav
+        [ Btn.toHtml <| link Btn.Signup "sign up" ]
+        [ div [ class "flex justify-center" ]
             [ div [ class "w-full md:w-2/3"]
                 [ h1 [ class "text-center mb-6 text-2xl text-gray-900" ] [ text "Sign Up" ]
                 , loginForm model
@@ -214,6 +214,6 @@ view _ model =
             ]
         , Toast.view ToastMsg model.toasties
         ]
-
+        
   in
   ( "Signup", markup )  
