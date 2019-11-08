@@ -122,8 +122,12 @@ update state msg model =
           )
 
 
-    -- placeholder
-    _ -> (model, Cmd.none, SharedState.NoUpdate)
+    ToastMsg toastMsg ->
+      let
+        ( newModel, cmd ) = model
+          |> Toasty.update Toast.config ToastMsg toastMsg
+      in
+        ( newModel, cmd, SharedState.NoUpdate )
 
 
 
