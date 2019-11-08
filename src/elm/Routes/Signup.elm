@@ -206,14 +206,12 @@ view _ model =
     markup =
       withHnav
         [ Btn.toHtml <| link Btn.Signup "sign up" ]
-        [ div [ class "flex justify-center" ]
-            [ div [ class "w-full md:w-2/3"]
-                [ h1 [ class "text-center mb-6 text-2xl text-gray-900" ] [ text "Sign Up" ]
-                , loginForm model
-                ]
+        [ div [ class "flex flex-col justify-center" ]
+            [ h1 [ class "mb-6 text-2xl text-gray-900" ] [ text "Sign Up" ]
+            , loginForm model
             ]
         , Toast.view ToastMsg model.toasties
         ]
-        
+
   in
   ( "Signup", markup )  

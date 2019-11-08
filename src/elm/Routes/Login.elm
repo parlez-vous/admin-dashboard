@@ -183,8 +183,8 @@ view _ model =
     markup =
       withHnav
         [ Btn.toHtml <| link Btn.Signup "sign up" ]
-        [ div [ class "mx-auto md:mx-64" ]
-            [ h1 [ class "text-center mb-6 text-2xl text-gray-900" ] [ text "Log Into Parlez Vous" ]
+        [ div [ class "flex flex-col justify-center" ]
+            [ h1 [ class "mb-6 text-2xl text-gray-900" ] [ text "Log Into Parlez Vous" ]
             , loginForm model
             ]
         , Toast.view ToastMsg model.toasties
