@@ -18,6 +18,7 @@ import Api.Deserialize as Input
 import SharedState exposing (SharedState, PublicState, SharedStateUpdate)
 import UI.Nav exposing (withHnav)
 import UI.Button as Btn exposing (button, link)
+import UI.Input as Input
 import UI.Toast as Toast
 import Utils
 
@@ -123,49 +124,21 @@ type alias Title = String
 loginForm : Model -> Html Msg
 loginForm model =
   let
-    classes = Utils.toClass
-      [ "border"
-      , "border-solid"
-      , "border-gray-400"
-      , "rounded"
-      , "px-4"
-      , "py-2"
-      , "w-64"
-      , "block"
-      , "bg-gray-200"
-      , "focus:bg-gray-100"
-      , "focus:outline-none"
-      , "text-gray-700"
-      , "leading-tight"
-      ]
+    usernameInput = Input.input (Input.Text model.username UpdateUsername)
+      |> Input.withNoAutocomplete
+      |> Input.withPlaceholder "username..."
+      |> Input.withLabel "Username" "username-input"
+      |> Input.toHtml
+
+    passwordInput = Input.input (Input.Password model.password UpdatePassword)
+      |> Input.withPlaceholder "password"
+      |> Input.withLabel "Password" "password-input"
+      |> Input.toHtml
 
   in
   H.form [ class "md:w-1/2 mx-auto", onSubmit SubmitForm ]
-    [ div [ class "md:flex md:items-center" ]
-        [ H.label [ A.for "username", class "w-5/12 md:pr-6 text-gray-500 font-semibold" ] [ text "Username / Email" ]
-        , H.input
-            [ A.type_ "input"
-            , A.placeholder "username..."
-            , A.id "username"
-            , A.autocomplete False
-            , onInput UpdateUsername
-            , value model.username
-            , classes
-            ]
-            []
-        ]
-    , div [ class "md:flex md:items-center mt-4" ]
-        [ H.label [ A.for "password", class "w-5/12 md:pr-6 text-gray-500 font-semibold" ] [ text "Password" ]
-        , H.input
-            [ A.type_ "password"
-            , A.placeholder "password..."
-            , A.id "password"
-            , onInput UpdatePassword
-            , value model.password
-            , classes
-            ]
-            []
-        ]
+    [ usernameInput
+    , passwordInput
     , div [ class "flex justify-center mt-6" ]
         [ Btn.toHtml <| button "Log In"
         , link Btn.Signup "Sign Up"

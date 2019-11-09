@@ -19,6 +19,7 @@ import Api.Deserialize as Input
 import UI.Nav exposing (withHnav)
 import UI.Button as Btn exposing (button, link)
 import UI.Toast as Toast
+import UI.Input as Input
 import Utils
   
 
@@ -136,61 +137,28 @@ update state msg model =
 loginForm : Model -> Html Msg
 loginForm model =
   let
-    classes = Utils.toClass
-      [ "border"
-      , "border-solid"
-      , "border-gray-400"
-      , "rounded"
-      , "px-4"
-      , "py-2"
-      , "w-64"
-      , "block"
-      , "bg-gray-200"
-      , "focus:bg-gray-100"
-      , "focus:outline-none"
-      , "text-gray-700"
-      , "leading-tight"
-      ]
+    usernameInput = Input.input (Input.Text model.username UpdateUsername)
+      |> Input.withNoAutocomplete
+      |> Input.withPlaceholder "username..."
+      |> Input.withLabel "Username" "username-input"
+      |> Input.toHtml
+
+    passwordInput = Input.input (Input.Password model.password UpdatePassword)
+      |> Input.withPlaceholder "password"
+      |> Input.withLabel "Password" "password-input"
+      |> Input.toHtml
+
+    
+    pswdConfirmInput = Input.input (Input.Password model.passwordConfirm UpdatePassConfirm)
+      |> Input.withPlaceholder "confirm password ..."
+      |> Input.withLabel "Confirm Password" "password-confirm-input"
+      |> Input.toHtml
 
   in
   H.form [ class "mx-auto", onSubmit SubmitForm ]
-    [ div [ class "md:flex md:items-center" ]
-        [ H.label [ A.for "username", class "w-1/4 md:pr-6 text-gray-500 font-semibold" ] [ text "Username / Email" ]
-        , H.input
-            [ A.type_ "input"
-            , A.placeholder "username..."
-            , A.id "username"
-            , A.autocomplete False
-            , onInput UpdateUsername
-            , value model.username
-            , classes
-            ]
-            []
-        ]
-    , div [ class "md:flex md:items-center mt-4" ]
-        [ H.label [ A.for "password", class "w-1/4 md:pr-6 text-gray-500 font-semibold" ] [ text "Password" ]
-        , H.input
-            [ A.type_ "password"
-            , A.placeholder "password..."
-            , A.id "password"
-            , onInput UpdatePassword
-            , value model.password
-            , classes
-            ]
-            []
-        ]
-    , div [ class "md:flex md:items-center mt-4" ]
-        [ H.label [ A.for "password-confirm", class "w-1/4 md:pr-6 text-gray-500 font-semibold" ] [ text "Confirm Password" ]
-        , H.input
-            [ A.type_ "password"
-            , A.placeholder "confirm password ..."
-            , A.id "password-confirm"
-            , onInput UpdatePassConfirm
-            , value model.passwordConfirm
-            , classes
-            ]
-            []
-        ]
+    [ usernameInput
+    , passwordInput
+    , pswdConfirmInput
     , div [ class "flex justify-center mt-6" ]
         [ Btn.toHtml <| button "Sign Up"
         , link Btn.Login "Log In"
