@@ -7,6 +7,7 @@ module SharedState exposing
   , init
   , toPrivate
   , toDict
+  , SiteDict
   )
   
 
