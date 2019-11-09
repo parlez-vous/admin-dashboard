@@ -183,15 +183,15 @@ viewSite site =
       else "Not Verified :("
 
   in
-    div [ class "site-container" ]
-      [ header [ class "site-details" ]
+    div [ class "" ]
+      [ header [ class "" ]
           [ a [ href link ] [ h2 [] [ text site.hostname ] ]
           
           -- This is a placeholder for what I imagine
           -- to be site details
           , p [] [ text "No data to display" ]
           ]
-      , div [ class "site-status" ]
+      , div [ class "" ]
           [ text status ]
       ]
 
