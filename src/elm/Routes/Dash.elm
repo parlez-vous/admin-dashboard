@@ -20,7 +20,7 @@ import RemoteData exposing (WebData)
 import Api
 import Api.Output as Output
 import Api.Deserialize as Input
-import SharedState exposing (PrivateState, SharedStateUpdate(..))
+import SharedState exposing (PrivateState, SharedStateUpdate(..), SiteDict)
 import Utils exposing (logout)
 import UI.Icons exposing (logo, cog)
 import UI.Button as U
@@ -196,6 +196,28 @@ viewSite site =
       ]
 
 
+viewSites : SiteDict -> Html Msg
+viewSites sites =
+  let
+    adminHasSites = (Dict.size sites) > 0
+
+    baseContent =
+      List.append
+        [ text <| "You have " ++ (String.fromInt <| Dict.size sites) ++ " sites!"
+        ]
+        (List.map viewSite (Dict.values sites))
+
+    content =
+      if adminHasSites then
+        baseContent
+      else
+        List.append baseContent [ text "heyooo" ]
+
+
+  in
+    div [] content
+
+
 view : PrivateState -> Model -> (Title, Html Msg)
 view state model = 
   let
@@ -215,15 +237,13 @@ view state model =
       case state.sites of
         RemoteData.NotAsked -> loading
         RemoteData.Loading  -> loading
-        RemoteData.Success sites ->
-          div []
-            [ text <| "You have " ++ (String.fromInt <| Dict.size sites) ++ " sites!"
-            , div [] <| List.map viewSite (Dict.values sites)
-            ]
-
+        RemoteData.Success sites -> viewSites sites
           
-          
-        _ ->
+        -- TODO: refactor this branch of
+        -- the case statement. I don't recall
+        -- why this view is the view for the error
+        -- case
+        RemoteData.Failure err ->
           div []
             [ text welcomeMsg
             , input
@@ -238,16 +258,18 @@ view state model =
             
     viewWithNav = withVnav model ResponsiveNavMsg
 
+    navigationOpts = 
+      div [ class "font-bold" ]
+        [ div [] [ cog, text "settings" ] 
+        , button [ class "", onClick LogOut ] [ text "Log Out" ]
+        ]
+
     html =
       viewWithNav
-        (div [ class "font-bold" ]
-          [ cog
-          , text "settings"
-          ])
+        navigationOpts
         (div [ class "" ]
           [ h1 [] [ text "Websites" ]
           , content
-          , button [ class "", onClick LogOut ] [ text "Log Out" ]
           , Toast.view ToastMsg model.toasties
           ])
   in 
