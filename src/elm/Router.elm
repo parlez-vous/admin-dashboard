@@ -11,6 +11,7 @@ module Router exposing
 import Html as Html exposing (..)
 import Browser
 import Browser.Navigation as Nav
+import Html.Attributes exposing (class)
 import RemoteData
 import Url exposing (Url)
 import Url.Parser as Parser exposing (Parser, oneOf, int, (</>))
@@ -259,5 +260,5 @@ view toMsg sharedState routerModel =
 
   in
   { title = title ++ " | Parlez-Vous "
-  , body = [ html ]
+  , body = [ div [ class "bg-gray-100" ] [ html ] ]
   }
