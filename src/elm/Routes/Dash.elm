@@ -22,7 +22,7 @@ import Api.Output as Output
 import Api.Deserialize as Input
 import SharedState exposing (PrivateState, SharedStateUpdate(..))
 import Utils exposing (logout)
-import UI.Icons exposing (bell, logo, user, cog)
+import UI.Icons exposing (logo, cog)
 import UI.Button as U
 import UI.Loader as Loader
 import UI.Toast as Toast
@@ -230,16 +230,14 @@ view state model =
 
     html =
       withVnav
-        (div [ class "nav-primary-content"] [  ])
-        (div [ class "nav-secondary-content" ]
-          [ bell
-          , div [ class "user-container" ] [ user ] 
-          , cog
+        (div [ class ""] [  ])
+        (div [ class "" ]
+          [ cog
           ])
-        (div [ class "content" ]
+        (div [ class "" ]
           [ h1 [] [ text "Websites" ]
           , content
-          , button [ class "logout", onClick LogOut ] [ text "Log Out" ]
+          , button [ class "", onClick LogOut ] [ text "Log Out" ]
           , Toast.view ToastMsg model.toasties
           ])
   in 
