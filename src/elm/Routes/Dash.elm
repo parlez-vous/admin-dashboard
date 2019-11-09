@@ -26,7 +26,7 @@ import UI.Icons exposing (logo, cog)
 import UI.Button as U
 import UI.Loader as Loader
 import UI.Toast as Toast
-import UI.Nav exposing (withVnav)
+import UI.Nav as ResponsiveNav exposing (withVnav)
 
 
 -- MODEL
@@ -34,6 +34,7 @@ import UI.Nav exposing (withVnav)
 type alias Model =
   { hostname : String
   , toasties : Toast.ToastState
+  , responsiveNavVisible : Bool
   }
 
 
@@ -44,6 +45,7 @@ type Msg
   | DomainSubmitted (Result Http.Error Input.Site)
   | ToastMsg (Toasty.Msg String)
   | SitesResponse (WebData Input.Sites)
+  | ResponsiveNavMsg ResponsiveNav.Msg
 
 
 
@@ -51,6 +53,7 @@ initModel : Model
 initModel =
   { hostname = ""
   , toasties = Toast.init
+  , responsiveNavVisible = False
   }
 
 
@@ -157,6 +160,12 @@ update state msg model =
 
         _ ->
           ( model, Cmd.none, NoUpdate )
+
+    ResponsiveNavMsg subMsg ->
+      let
+        newModel = ResponsiveNav.update subMsg model
+      in
+        ( newModel, Cmd.none, NoUpdate )
   
 
 
@@ -227,12 +236,13 @@ view state model =
             , U.toHtml submitBtn
             ]
             
+    viewWithNav = withVnav model ResponsiveNavMsg
 
     html =
-      withVnav
-        (div [ class ""] [  ])
-        (div [ class "" ]
+      viewWithNav
+        (div [ class "font-bold" ]
           [ cog
+          , text "settings"
           ])
         (div [ class "" ]
           [ h1 [] [ text "Websites" ]
