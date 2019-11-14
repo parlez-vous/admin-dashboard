@@ -8,6 +8,7 @@ module SharedState exposing
   , toPrivate
   , toDict
   , SiteDict
+  , allVerified
   )
   
 
@@ -19,6 +20,19 @@ import Api.Deserialize as Input
 
 
 type alias SiteDict = Dict Int Input.Site
+
+
+allVerified : SiteDict -> Bool
+allVerified =
+  let
+    isVerified _ site allVerified_ =
+      if not allVerified_ then
+        allVerified_
+      else
+        site.verified
+  in
+  Dict.foldr isVerified False
+
 
 toDict : Input.Sites -> SiteDict
 toDict =
