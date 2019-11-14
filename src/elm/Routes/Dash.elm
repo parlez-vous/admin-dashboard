@@ -217,41 +217,9 @@ viewSite site =
 
 
 
-
-
-
-viewSites : SiteDict -> Model -> Html Msg
-viewSites sites model =
-  let
-    adminHasSites = (Dict.size sites) > 0
-
-    baseContent =
-      List.append
-        [ text <| "You have " ++ (String.fromInt <| Dict.size sites) ++ " sites!"
-        ]
-        (List.map viewSite (Dict.values sites))
-
-    content =
-      if adminHasSites then
-        baseContent
-      else
-        let
-          addSiteInput = Input.input (Input.Url model.hostname SiteInput)
-            |> Input.withPlaceholder "google.com"
-            |> Input.toHtml
-
-          callToAction = h2 [] [ text "Why don't you go ahead and register your first site!" ]
-
-          submitBtn = U.button "Submit"
-            |> U.onClick (SubmitDomain model.hostname)
-            |> U.toHtml
-
-        in
-        List.append baseContent [ callToAction, addSiteInput, submitBtn ]
-
-
-  in
-    div [] content
+viewDash : Html Msg
+viewDash =
+  div [] [ text "viewing dash ..." ]
 
 
 view : PrivateState -> Model -> (Title, Html Msg)
@@ -271,7 +239,7 @@ view state model =
       case state.sites of
         RemoteData.NotAsked -> loading
         RemoteData.Loading  -> loading
-        RemoteData.Success sites -> viewSites sites model
+        RemoteData.Success sites -> viewDash
         RemoteData.Failure err -> div [] [ text "woopsies!" ]
             
     viewWithNav = withVnav model ResponsiveNavMsg
@@ -339,8 +307,7 @@ view state model =
       viewWithNav
         navigationOpts
         (div [ class "my-5 mx-8" ]
-          [ h1 [] [ text "Websites" ]
-          , content
+          [ content
           , Toast.view ToastMsg model.toasties
           ])
   in 
