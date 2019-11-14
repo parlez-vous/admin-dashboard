@@ -1,8 +1,13 @@
-@import "ui.css";
+@tailwind base;
+@tailwind components;
 
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+.site-summary {
+	@apply absolute bg-gray-100 w-40 shadow;
+	bottom: .5rem;
+	left: 10rem;
+}
+
+@tailwind utilities;
 
 
 html, body {
@@ -11,4 +16,24 @@ html, body {
 
 html > *, body > * {
 	height: 100%;
+}
+
+@keyframes donut-spin {
+	0% {
+		transform: rotate(0deg);
+	}
+
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+.loading__donut {
+	display: inline-block;
+	border: 4px solid rgba(0, 0, 0, 0.1);
+	border-left-color: #fa544b;
+	border-radius: 50%;
+	width: 30px;
+	height: 30px;
+	animation: donut-spin 1.2s linear infinite;
 }
