@@ -8,7 +8,7 @@ module UI.Input exposing
   )
 
 import Html exposing (Html, div, label, text)
-import Html.Attributes as A exposing (class, classList, type_)
+import Html.Attributes as A exposing (class, type_)
 import Html.Events as E
 
 import Utils

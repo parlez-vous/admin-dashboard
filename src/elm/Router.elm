@@ -22,6 +22,7 @@ import Routes.Dash as Dash
 import Routes.Site as Site
 import Routes.Login as Login
 import Routes.Signup as Signup
+import Routes.RegisterSite as RegisterSite
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 
 
@@ -32,6 +33,7 @@ type Route
   | Site Site.Model
   | Login Login.Model
   | Signup Signup.Model
+  | RegisterSite RegisterSite.Model
   | NotFound
 
 
@@ -45,6 +47,7 @@ type Msg
   | SiteMsg Site.Msg
   | LoginMsg Login.Msg
   | SignupMsg Signup.Msg
+  | RegisterSiteMsg RegisterSite.Msg
 
 
 parser : Parser (Route -> a) a
@@ -55,6 +58,7 @@ parser =
     , Parser.map (Site << Site.initModel) (Parser.s "sites" </> int)
     , Parser.map (Login Login.initModel) (Parser.s "login")
     , Parser.map (Signup Signup.initModel) (Parser.s "signup")
+    , Parser.map (RegisterSite RegisterSite.initModel) (Parser.s "register-site")
     ]
 
 fromUrl : Url -> Model
@@ -185,6 +189,26 @@ update state msg model =
         , sharedStateUpdate
         )
 
+    ( RegisterSiteMsg registerSiteMsg, RegisterSite registersiteModel ) ->
+      case state of
+        Private privateState ->
+          let
+            ( newModel, registerSiteCmd, sharedStateUpdate ) =
+              RegisterSite.update privateState registerSiteMsg registersiteModel
+          in
+            ( RegisterSite newModel
+            , Cmd.map RegisterSiteMsg registerSiteCmd
+            , sharedStateUpdate
+            )
+
+        Public _ ->
+          ( RegisterSite registersiteModel
+          , Cmd.none
+          , SharedState.NoUpdate
+          )
+
+      
+
     -- Placeholder for now
     _ ->
       ( model, Cmd.none, SharedState.NoUpdate )
@@ -250,7 +274,15 @@ view toMsg sharedState routerModel =
                 |> Tuple.mapSecond (Html.map SignupMsg)
                 |> Tuple.mapSecond (Html.map toMsg)
 
+        RegisterSite registerSiteModel ->
+          case sharedState of
+            Public _ -> redirectPage
 
+            Private privateState ->
+              RegisterSite.view privateState registerSiteModel
+              |> Tuple.mapSecond (Html.map RegisterSiteMsg)
+              |> Tuple.mapSecond (Html.map toMsg)
+            
 
         NotFound ->
           ( "Woops!", div [] [ text "404 Not Found"] )

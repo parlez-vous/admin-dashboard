@@ -10,7 +10,7 @@ module UI.Nav exposing
   )
 
 import Html exposing (Html, div, header, nav)
-import Html.Attributes as Attributes exposing (class)
+import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import UI.Icons exposing (logo, hamburger, x)
 

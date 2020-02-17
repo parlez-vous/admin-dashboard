@@ -1,4 +1,4 @@
-module Routes.Dash exposing
+module Routes.RegisterSite exposing
   ( Model
   , Msg
   , initModel
@@ -10,59 +10,58 @@ module Routes.Dash exposing
 import Browser.Navigation as Nav
 import Dict
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
+import Http
 import Toasty
-import RemoteData exposing (WebData)
+import RemoteData as RemoteData
+import SharedState exposing (PrivateState, SharedStateUpdate(..))
 
 import Api
 import Api.Deserialize as Input
-import SharedState exposing (PrivateState, SharedStateUpdate(..), SiteDict)
-import Utils exposing (logout)
+import Api.Output as Output
+import UI.Button as Btn
 import UI.Icons exposing (logo, rightCaret)
 import UI.Input as Input
-import UI.Button as Btn
-import UI.Loader as Loader
 import UI.Toast as Toast
-import UI.Link as Link
+import UI.Loader as Loader
 import UI.Nav as ResponsiveNav exposing (withVnav)
+import Utils as Utils
 
-
--- MODEL
 
 type alias Model =
-  { toasties : Toast.ToastState
+  { hostname : String
+  , toasties : Toast.ToastState
   , responsiveNavVisible : Bool
   , siteSummaryVisible : Bool
   }
 
-
 type Msg
-  = LogOut
+  = DomainInput String
+  | SubmitDomain String  
+  | DomainSubmitted (Result Http.Error Input.Site)
   | ToastMsg (Toasty.Msg String)
-  | SitesResponse (WebData Input.Sites)
   | ResponsiveNavMsg ResponsiveNav.Msg
+  | LogOut
   | ToggleShowSiteSummary
-
+  
 
 
 initModel : Model
 initModel =
-  { toasties = Toast.init
-  , responsiveNavVisible = False
+  { hostname = ""
+  , toasties = Toast.init 
+  , responsiveNavVisible = True
   , siteSummaryVisible = False
   }
 
-
 transitionTrigger : PrivateState -> Cmd Msg
-transitionTrigger { admin, api } =
-  let
-    ( _, token ) = admin
-  in
-    Api.getSites token api SitesResponse
+transitionTrigger _ = Cmd.none
+
 
 toastBuilder : String -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 toastBuilder = Toasty.addToast Toast.config ToastMsg
+
 
 update : PrivateState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update state msg model =
@@ -71,7 +70,7 @@ update state msg model =
     LogOut ->
       let
         publicState = { api = state.api, navKey = state.navKey }
-        ( logOutCmd, sharedStateUpdate ) = logout publicState
+        ( logOutCmd, sharedStateUpdate ) = Utils.logout publicState
 
       in
         ( model
@@ -79,9 +78,65 @@ update state msg model =
         , sharedStateUpdate
         )
 
-    -- this gets triggered __some__time__
-    -- after a toast gets added to the stack
-    -- via `addToast`
+    DomainInput rawDomain ->
+      ( { model | hostname = rawDomain
+        }
+      , Cmd.none
+      , NoUpdate
+      )
+
+    SubmitDomain rawDomain ->
+      let
+        data = Output.RegisterSite rawDomain
+
+        ( _, token ) = state.admin
+
+      in
+        ( model
+        , Api.registerSite token state.api DomainSubmitted data
+        , NoUpdate 
+        )
+
+    DomainSubmitted result ->
+      case result of
+        Ok site ->
+          let
+            _ = Debug.log "Site registered: " site
+          in
+            ( model, Cmd.none, NoUpdate )
+
+        Err e ->
+         {--
+         ( m, c ) = ( model, Cmd.none )
+            |> Toasty.addToast Toast.config ToastMsg "Invalid URL"
+         --}
+          let
+            _ = Debug.log "Failed to register site: " e
+
+            ( newModel, cmd ) =
+              case e of
+                Http.BadStatus statusCode ->
+                  if statusCode == 400 then
+                    ( model, Cmd.none )
+                      |>  toastBuilder "Make sure you enter a Fully Qualified Domain Name!" 
+                  else if statusCode == 409 then
+                    ( model, Cmd.none )
+                      |> toastBuilder "This Site is already registered!"
+                  else
+                    ( model, Cmd.none )
+                    |> toastBuilder "Something went wrong"
+
+                _ -> ( model, Cmd.none )
+                  |> toastBuilder "Something went wrong"
+          in
+            ( newModel, cmd, NoUpdate )
+
+    ToggleShowSiteSummary ->
+      let
+        newModel = { model | siteSummaryVisible = not model.siteSummaryVisible }
+      in
+      (newModel, Cmd.none, NoUpdate )
+    
     ToastMsg subMsg ->
       let
         ( m , cmd ) =
@@ -94,78 +149,22 @@ update state msg model =
         , NoUpdate
         )
 
-    SitesResponse response ->
-      let 
-        _ = Debug.log "SitesResponse" response
-      in
-      case response of
-        RemoteData.Success sites ->
-          ( model
-          , Cmd.none
-          , UpdateSites <| SharedState.toDict sites
-          )
-
-        RemoteData.Failure _ ->
-          let
-            (newModel, cmd) = ( model, Cmd.none )
-              |> toastBuilder "Something went wrong"
-          in
-          (newModel, cmd, NoUpdate)
-
-        _ ->
-          ( model, Cmd.none, NoUpdate )
-
     ResponsiveNavMsg subMsg ->
       let
         newModel = ResponsiveNav.update subMsg model
       in
         ( newModel, Cmd.none, NoUpdate )
 
-    ToggleShowSiteSummary ->
-      let
-        newModel = { model | siteSummaryVisible = not model.siteSummaryVisible }
-      in
-      (newModel, Cmd.none, NoUpdate )
-  
-
-
-
-
-viewDash : SiteDict -> Html Msg
-viewDash sites =
-  let
-    registerSiteLink = Link.link Link.RegisterSite "registering"
-      |> Link.toHtml
-
-    content = 
-      if Dict.isEmpty sites then
-        [ text "hmm... it's awefully quite around here ... start by "
-        , registerSiteLink
-        , text " your site!"
-        ]
-
-      else
-        [ text "look at you go!" ]
-  in
-    div [] content
-
 
 type alias Title = String
 
 view : PrivateState -> Model -> (Title, Html Msg)
-view state model = 
+view state model =
   let
     loading =
       div [ class "loading-container" ]
         [ Loader.donut ]
 
-    content =
-      case state.sites of
-        RemoteData.NotAsked -> loading
-        RemoteData.Loading  -> loading
-        RemoteData.Success sites -> viewDash sites
-        RemoteData.Failure _ -> div [] [ text "woopsies!" ]
-            
     viewWithNav = withVnav model ResponsiveNavMsg
 
     siteNav =
@@ -228,6 +227,12 @@ view state model =
           |> Btn.toHtml
         ]
 
+    content =
+      div []
+        [ Input.input (Input.Url model.hostname DomainInput)
+          |> Input.toHtml
+        ]
+
     html =
       viewWithNav
         navigationOpts
@@ -235,5 +240,7 @@ view state model =
           [ content
           , Toast.view ToastMsg model.toasties
           ])
-  in 
-  ( "Admin Panel", html )
+  in
+  
+  ( "Register Site", html )
+  
