@@ -30,8 +30,7 @@ import UI.Nav as ResponsiveNav exposing (withVnav)
 -- MODEL
 
 type alias Model =
-  { hostname : String
-  , toasties : Toast.ToastState
+  { toasties : Toast.ToastState
   , responsiveNavVisible : Bool
   , siteSummaryVisible : Bool
   }
@@ -48,8 +47,7 @@ type Msg
 
 initModel : Model
 initModel =
-  { hostname = ""
-  , toasties = Toast.init
+  { toasties = Toast.init
   , responsiveNavVisible = False
   , siteSummaryVisible = False
   }
