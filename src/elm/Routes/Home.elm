@@ -63,8 +63,8 @@ update sharedState msg model =
             -- does not make sense
             Public _ -> ( Cmd.none, SharedState.NoUpdate )
 
-            Private { api, navKey } ->
-              logout { api = api, navKey = navKey }
+            Private privateState ->
+              logout privateState
 
       in
       ( model

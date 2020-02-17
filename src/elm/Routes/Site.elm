@@ -10,7 +10,6 @@ module Routes.Site exposing
   )
 
 
-import Browser.Navigation as Nav
 import Dict
 import Html exposing (..)
 import RemoteData exposing (WebData)
@@ -21,7 +20,7 @@ import SharedState exposing (PrivateState, SharedStateUpdate)
 
 
 type alias Model =
-  { siteId : Int
+  { siteId : String
   }
 
 
@@ -29,12 +28,12 @@ type alias Model =
 type Msg = SiteResponse (WebData Input.Site)
 
 
-initModel : Int -> Model
+initModel : String -> Model
 initModel = Model
 
 
 transitionTrigger : Model -> PrivateState -> Cmd Msg
-transitionTrigger model { admin, api, navKey, sites } =
+transitionTrigger model { admin, api, sites } =
   case sites of
     RemoteData.NotAsked ->
       let

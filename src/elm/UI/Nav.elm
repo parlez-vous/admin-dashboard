@@ -5,31 +5,77 @@ Horizontal Nav
 module UI.Nav exposing
   ( withVnav
   , withHnav
+  , init
   , update
+  , NavState
   , Msg
   )
 
-import Html exposing (Html, div, header, nav)
+import Dict
+import Browser.Navigation as Nav
+import Html exposing (Html, div, header, nav, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import UI.Icons exposing (logo, hamburger, x)
+import RemoteData
+
+import SharedState exposing (PrivateState, SharedStateUpdate)
+import UI.Button as Btn
+import UI.Icons exposing (logo, hamburger, rightCaret, x)
+import UI.Loader as Loader
+import Utils as Utils
 
 
-type alias Model a =
-  { a |
-    responsiveNavVisible : Bool
+type alias NavState =
+  { responsiveNavVisible : Bool
+  , siteSummaryVisible : Bool
   }
 
 
 type Msg
-  = ToggleResponsiveNavbar
+  = LogOut PrivateState
+  | ToggleResponsiveNavbar
+  | ToggleShowSiteSummary
 
 
-update : Msg -> Model a -> Model a
-update _ model =
-  { model |
-    responsiveNavVisible = not model.responsiveNavVisible
+init : NavState
+init =
+  { responsiveNavVisible = True
+  , siteSummaryVisible = False
   }
+
+
+update : Msg -> { a | navbar : NavState } -> ( { a | navbar : NavState }, Cmd msg, SharedStateUpdate )
+update msg ({ navbar } as parentModel) =
+  case msg of
+    ToggleResponsiveNavbar ->
+      ( { parentModel |
+          navbar =
+            { navbar | responsiveNavVisible = not navbar.responsiveNavVisible
+            }
+        }
+      , Cmd.none
+      , SharedState.NoUpdate
+      )
+
+    ToggleShowSiteSummary ->
+      ( { parentModel |
+          navbar =
+            { navbar | siteSummaryVisible = not navbar.siteSummaryVisible
+            }
+        }
+      , Cmd.none
+      , SharedState.NoUpdate
+      )
+
+    LogOut privateState ->
+        let
+          ( logOutCmd, sharedStateUpdate ) = Utils.logout privateState
+
+        in
+          ( parentModel
+          , Cmd.batch [ logOutCmd, Nav.pushUrl privateState.navKey "/" ]
+          , sharedStateUpdate
+          )
 
 
 hnav : List (Html msg) -> Html msg
@@ -41,29 +87,89 @@ hnav children =
 
 
 
-
-
-withVnav : Model a -> (Msg -> msg) -> Html msg -> Html msg -> Html msg
-withVnav { responsiveNavVisible } tagger navContent pageContent =
+withVnav : PrivateState -> ({ a | navbar : NavState }) -> (Msg -> msg) -> Html msg -> Html msg
+withVnav state { navbar } tagger pageContent =
   let
-    closeIcon =
-      div [ onClick (tagger ToggleResponsiveNavbar) ]
-        [ x ]
+    loading =
+      div [ class "loading-container" ]
+        [ Loader.donut ]
+        
+    siteNav =
+      case state.sites of
+        RemoteData.Success sites ->
+          let 
+            bgColour = if SharedState.allVerified sites
+              then
+                "bg-gray-400"
+              else
+                "bg-red-300"
 
-    navContents = [ navContent ]
+            classes = Utils.toClass
+              [ "inline-block"
+              , "bg-gray-400"
+              , "py-1"
+              , "px-2"
+              , "text-center"
+              , "rounded"
+              , bgColour
+              ]
+
+            siteList =
+              Dict.values sites
+              |> List.map (\site -> text site.hostname)
+
+
+            siteSummary =
+              let
+                defaultClasses = [ "site-summary" ]
+                
+                siteSummaryClasses =
+                  if navbar.siteSummaryVisible then
+                    defaultClasses
+                  else
+                    "hidden" :: defaultClasses
+
+              in
+              div [ Utils.toClass siteSummaryClasses ]
+                [ div [ class "p-1 border-b-2 border-solid border-gray-300" ] [ text "Your Sites" ]
+                , div [] siteList
+                ]
+          in
+            div [ class "relative" ]
+              [ div [ onClick (tagger ToggleShowSiteSummary), class "mx-5 my-2 p-2 text-center rounded cursor-pointer hover:bg-gray-300 select-none" ]
+                  [ div [ ] [ text "Sites ", rightCaret ]
+                  , div [ classes ] [ text <| String.fromInt (Dict.size sites) ]
+                  ]
+              , siteSummary
+              ]
+        
+        _ -> loading
+
+    navContent = 
+      div [ class "font-bold" ]
+          [ logo "40"
+          , siteNav
+          , Btn.button "Log Out"
+            |> Btn.onClick (tagger <| LogOut state)
+            |> Btn.toHtml
+          ]
 
     regularNav =
       header
         [ class "hidden bg-gray-200 h-full w-1/6 p-5 md:block"
         ]
-        navContents
+        [ navContent ]
+
+    closeIcon =
+      div [ onClick (tagger ToggleResponsiveNavbar) ]
+        [ x ]
 
     responsiveNav = 
-      if responsiveNavVisible then
+      if navbar.responsiveNavVisible then
         header
           [ class "bg-gray-100 fixed h-full w-2/3 p-5 md:hidden"
           ]
-          (closeIcon :: navContents)
+          [ closeIcon, navContent ]
       else
         div
           [ class "m-5 flex justify-between md:hidden"

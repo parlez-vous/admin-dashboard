@@ -1,5 +1,6 @@
 module UI.Link exposing
   ( link
+  , externalLink
   , toHtml
   , toHref
   , Route(..)
@@ -8,6 +9,7 @@ module UI.Link exposing
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Utils as Utils
 
 type Route
   = Home
@@ -42,6 +44,20 @@ toHref route = case route of
   RegisterSite -> "/register-site"
 
 
+linkStyles : List String
+linkStyles =
+  [ "text-blue-500"
+  , "underline"
+  , "hover:text-blue-700"
+  ]
+
 toHtml : Link -> Html msg
 toHtml (Link opts label) =
-  a [ href (toHref opts.route) ] [ text label ]
+  a [ href (toHref opts.route), Utils.toClass linkStyles ] [ text label ]
+
+
+type alias URL = String
+
+externalLink : URL -> String -> Html a
+externalLink url label =
+  a [ href url, Utils.toClass linkStyles ] [ text label ]

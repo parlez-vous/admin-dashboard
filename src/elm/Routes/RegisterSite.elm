@@ -7,33 +7,29 @@ module Routes.RegisterSite exposing
   , view
   )
 
-import Browser.Navigation as Nav
-import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class)
-import Html.Events exposing (onClick)
 import Http
 import Toasty
-import RemoteData as RemoteData
+import RemoteData exposing (WebData)
 import SharedState exposing (PrivateState, SharedStateUpdate(..))
 
 import Api
 import Api.Deserialize as Input
 import Api.Output as Output
 import UI.Button as Btn
-import UI.Icons exposing (logo, rightCaret)
 import UI.Input as Input
+import UI.Link exposing (externalLink)
 import UI.Toast as Toast
-import UI.Loader as Loader
 import UI.Nav as ResponsiveNav exposing (withVnav)
-import Utils as Utils
+
+
 
 
 type alias Model =
   { hostname : String
   , toasties : Toast.ToastState
-  , responsiveNavVisible : Bool
-  , siteSummaryVisible : Bool
+  , navbar   : ResponsiveNav.NavState
   }
 
 type Msg
@@ -42,8 +38,7 @@ type Msg
   | DomainSubmitted (Result Http.Error Input.Site)
   | ToastMsg (Toasty.Msg String)
   | ResponsiveNavMsg ResponsiveNav.Msg
-  | LogOut
-  | ToggleShowSiteSummary
+  | SitesResponse (WebData Input.Sites)
   
 
 
@@ -51,12 +46,20 @@ initModel : Model
 initModel =
   { hostname = ""
   , toasties = Toast.init 
-  , responsiveNavVisible = True
-  , siteSummaryVisible = False
+  , navbar = ResponsiveNav.init
   }
 
+
 transitionTrigger : PrivateState -> Cmd Msg
-transitionTrigger _ = Cmd.none
+transitionTrigger { admin, api, sites } =
+  let
+    ( _, token ) = admin
+  in
+    case sites of
+      RemoteData.NotAsked -> 
+        Api.getSites token api SitesResponse
+      
+      _ -> Cmd.none
 
 
 toastBuilder : String -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
@@ -66,18 +69,6 @@ toastBuilder = Toasty.addToast Toast.config ToastMsg
 update : PrivateState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update state msg model =
   case msg of
-    -- FIXME: move into navbar UI
-    LogOut ->
-      let
-        publicState = { api = state.api, navKey = state.navKey }
-        ( logOutCmd, sharedStateUpdate ) = Utils.logout publicState
-
-      in
-        ( model
-        , Cmd.batch [ logOutCmd, Nav.pushUrl state.navKey "/" ]
-        , sharedStateUpdate
-        )
-
     DomainInput rawDomain ->
       ( { model | hostname = rawDomain
         }
@@ -96,6 +87,27 @@ update state msg model =
         , Api.registerSite token state.api DomainSubmitted data
         , NoUpdate 
         )
+
+    SitesResponse response ->
+      let 
+        _ = Debug.log "SitesResponse" response
+      in
+      case response of
+        RemoteData.Success sites ->
+          ( model
+          , Cmd.none
+          , UpdateSites <| SharedState.toDict sites
+          )
+
+        RemoteData.Failure _ ->
+          let
+            (newModel, cmd) = ( model, Cmd.none )
+              |> toastBuilder "Something went wrong"
+          in
+          (newModel, cmd, NoUpdate)
+
+        _ ->
+          ( model, Cmd.none, NoUpdate )
 
     DomainSubmitted result ->
       case result of
@@ -130,12 +142,6 @@ update state msg model =
                   |> toastBuilder "Something went wrong"
           in
             ( newModel, cmd, NoUpdate )
-
-    ToggleShowSiteSummary ->
-      let
-        newModel = { model | siteSummaryVisible = not model.siteSummaryVisible }
-      in
-      (newModel, Cmd.none, NoUpdate )
     
     ToastMsg subMsg ->
       let
@@ -150,10 +156,7 @@ update state msg model =
         )
 
     ResponsiveNavMsg subMsg ->
-      let
-        newModel = ResponsiveNav.update subMsg model
-      in
-        ( newModel, Cmd.none, NoUpdate )
+      ResponsiveNav.update subMsg model
 
 
 type alias Title = String
@@ -161,81 +164,22 @@ type alias Title = String
 view : PrivateState -> Model -> (Title, Html Msg)
 view state model =
   let
-    loading =
-      div [ class "loading-container" ]
-        [ Loader.donut ]
-
-    viewWithNav = withVnav model ResponsiveNavMsg
-
-    siteNav =
-      case state.sites of
-        RemoteData.Success sites ->
-          let 
-            bgColour = if SharedState.allVerified sites
-              then
-                "bg-gray-400"
-              else
-                "bg-red-300"
-
-            classes = Utils.toClass
-              [ "inline-block"
-              , "bg-gray-400"
-              , "py-1"
-              , "px-2"
-              , "text-center"
-              , "rounded"
-              , bgColour
-              ]
-
-            siteList =
-              Dict.values sites
-              |> List.map (\site -> text site.hostname)
-
-
-            siteSummary =
-              let
-                defaultClasses = [ "site-summary" ]
-                
-                siteSummaryClasses =
-                  if model.siteSummaryVisible then
-                    defaultClasses
-                  else
-                    "hidden" :: defaultClasses
-
-              in
-              div [ Utils.toClass siteSummaryClasses ]
-                [ div [ class "p-1 border-b-2 border-solid border-gray-300" ] [ text "Your Sites" ]
-                , div [] siteList
-                ]
-          in
-            div [ class "relative" ]
-              [ div [ onClick ToggleShowSiteSummary, class "mx-5 my-2 p-2 text-center rounded cursor-pointer hover:bg-gray-300 select-none" ]
-                  [ div [ ] [ text "Sites ", rightCaret ]
-                  , div [ classes ] [ text <| String.fromInt (Dict.size sites) ]
-                  ]
-              , siteSummary
-              ]
-        
-        _ -> loading
-
-    navigationOpts = 
-      div [ class "font-bold" ]
-        [ logo "40"
-        , siteNav
-        , Btn.button "Log Out"
-          |> Btn.onClick LogOut
-          |> Btn.toHtml
-        ]
+    viewWithNav = withVnav state model ResponsiveNavMsg
 
     content =
       div []
-        [ Input.input (Input.Url model.hostname DomainInput)
+        [ h1 [] [ text "Register a domain" ]
+        , text "Ensure that the domain you enter is a "
+        , externalLink "https://en.wikipedia.org/wiki/Fully_qualified_domain_name" "fully-qualified domain name"
+        , Input.input (Input.Url model.hostname DomainInput)
           |> Input.toHtml
+        , Btn.button "submit"
+          |> Btn.onClick (SubmitDomain model.hostname)
+          |> Btn.toHtml
         ]
 
     html =
       viewWithNav
-        navigationOpts
         (div [ class "my-5 mx-8" ]
           [ content
           , Toast.view ToastMsg model.toasties

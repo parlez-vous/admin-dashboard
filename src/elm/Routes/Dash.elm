@@ -7,24 +7,19 @@ module Routes.Dash exposing
   , view
   )
 
-import Browser.Navigation as Nav
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
 import Toasty
 import RemoteData exposing (WebData)
 
 import Api
 import Api.Deserialize as Input
 import SharedState exposing (PrivateState, SharedStateUpdate(..), SiteDict)
-import Utils exposing (logout)
-import UI.Icons exposing (logo, rightCaret)
 import UI.Input as Input
-import UI.Button as Btn
-import UI.Loader as Loader
 import UI.Toast as Toast
 import UI.Link as Link
+import UI.Loader as Loader
 import UI.Nav as ResponsiveNav exposing (withVnav)
 
 
@@ -32,34 +27,35 @@ import UI.Nav as ResponsiveNav exposing (withVnav)
 
 type alias Model =
   { toasties : Toast.ToastState
-  , responsiveNavVisible : Bool
-  , siteSummaryVisible : Bool
+  , navbar   : ResponsiveNav.NavState
   }
 
 
 type Msg
-  = LogOut
-  | ToastMsg (Toasty.Msg String)
+  = ToastMsg (Toasty.Msg String)
   | SitesResponse (WebData Input.Sites)
   | ResponsiveNavMsg ResponsiveNav.Msg
-  | ToggleShowSiteSummary
 
 
 
 initModel : Model
 initModel =
   { toasties = Toast.init
-  , responsiveNavVisible = False
-  , siteSummaryVisible = False
+  , navbar = ResponsiveNav.init
   }
 
 
 transitionTrigger : PrivateState -> Cmd Msg
-transitionTrigger { admin, api } =
+transitionTrigger { admin, api, sites } =
   let
     ( _, token ) = admin
   in
-    Api.getSites token api SitesResponse
+    case sites of
+      RemoteData.NotAsked -> 
+        Api.getSites token api SitesResponse
+      
+      _ -> Cmd.none
+
 
 toastBuilder : String -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 toastBuilder = Toasty.addToast Toast.config ToastMsg
@@ -67,18 +63,6 @@ toastBuilder = Toasty.addToast Toast.config ToastMsg
 update : PrivateState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update state msg model =
   case msg of
-    -- FIXME: move into navbar UI
-    LogOut ->
-      let
-        publicState = { api = state.api, navKey = state.navKey }
-        ( logOutCmd, sharedStateUpdate ) = logout publicState
-
-      in
-        ( model
-        , Cmd.batch [ logOutCmd, Nav.pushUrl state.navKey "/" ]
-        , sharedStateUpdate
-        )
-
     -- this gets triggered __some__time__
     -- after a toast gets added to the stack
     -- via `addToast`
@@ -93,6 +77,9 @@ update state msg model =
         , cmd
         , NoUpdate
         )
+
+    ResponsiveNavMsg subMsg ->
+      ResponsiveNav.update subMsg model
 
     SitesResponse response ->
       let 
@@ -115,17 +102,6 @@ update state msg model =
         _ ->
           ( model, Cmd.none, NoUpdate )
 
-    ResponsiveNavMsg subMsg ->
-      let
-        newModel = ResponsiveNav.update subMsg model
-      in
-        ( newModel, Cmd.none, NoUpdate )
-
-    ToggleShowSiteSummary ->
-      let
-        newModel = { model | siteSummaryVisible = not model.siteSummaryVisible }
-      in
-      (newModel, Cmd.none, NoUpdate )
   
 
 
@@ -155,82 +131,17 @@ type alias Title = String
 view : PrivateState -> Model -> (Title, Html Msg)
 view state model = 
   let
-    loading =
-      div [ class "loading-container" ]
-        [ Loader.donut ]
-
     content =
       case state.sites of
-        RemoteData.NotAsked -> loading
-        RemoteData.Loading  -> loading
+        RemoteData.NotAsked -> Loader.donut
+        RemoteData.Loading  -> Loader.donut
         RemoteData.Success sites -> viewDash sites
         RemoteData.Failure _ -> div [] [ text "woopsies!" ]
             
-    viewWithNav = withVnav model ResponsiveNavMsg
-
-    siteNav =
-      case state.sites of
-        RemoteData.Success sites ->
-          let 
-            bgColour = if SharedState.allVerified sites
-              then
-                "bg-gray-400"
-              else
-                "bg-red-300"
-
-            classes = Utils.toClass
-              [ "inline-block"
-              , "bg-gray-400"
-              , "py-1"
-              , "px-2"
-              , "text-center"
-              , "rounded"
-              , bgColour
-              ]
-
-            siteList =
-              Dict.values sites
-              |> List.map (\site -> text site.hostname)
-
-
-            siteSummary =
-              let
-                defaultClasses = [ "site-summary" ]
-                
-                siteSummaryClasses =
-                  if model.siteSummaryVisible then
-                    defaultClasses
-                  else
-                    "hidden" :: defaultClasses
-
-              in
-              div [ Utils.toClass siteSummaryClasses ]
-                [ div [ class "p-1 border-b-2 border-solid border-gray-300" ] [ text "Your Sites" ]
-                , div [] siteList
-                ]
-          in
-            div [ class "relative" ]
-              [ div [ onClick ToggleShowSiteSummary, class "mx-5 my-2 p-2 text-center rounded cursor-pointer hover:bg-gray-300 select-none" ]
-                  [ div [ ] [ text "Sites ", rightCaret ]
-                  , div [ classes ] [ text <| String.fromInt (Dict.size sites) ]
-                  ]
-              , siteSummary
-              ]
-        
-        _ -> loading
-
-    navigationOpts = 
-      div [ class "font-bold" ]
-        [ logo "40"
-        , siteNav
-        , Btn.button "Log Out"
-          |> Btn.onClick LogOut
-          |> Btn.toHtml
-        ]
+    viewWithNav = withVnav state model ResponsiveNavMsg
 
     html =
       viewWithNav
-        navigationOpts
         (div [ class "my-5 mx-8" ]
           [ content
           , Toast.view ToastMsg model.toasties
