@@ -26,7 +26,7 @@ type alias Admin =
 
 
 type alias Site =
-  { id       : Int
+  { id       : String
   , hostname : String
   , verified : Bool
 
@@ -38,11 +38,6 @@ type alias Site =
   , dnsTag   : String
   , created  : Time.Posix
   , updated  : Time.Posix
-
-  -- The admin that owns / controls the site
-  -- This will always be the admin associated with the
-  -- current session
-  , adminId  : Int
 
   , expiresBy : Time.Posix
   }
@@ -73,12 +68,11 @@ adminAndTokenDecoder =
 
 siteDecoder : Decoder Site
 siteDecoder =
-  D.map8 Site
-    (D.field "id" D.int)
+  D.map7 Site
+    (D.field "id" D.string)
     (D.field "hostname" D.string)
     (D.field "verified" D.bool)
     (D.field "dns_tag" D.string)
     (D.field "created_at" Iso8601.decoder)
     (D.field "updated_at" Iso8601.decoder)
-    (D.field "admin_user_id" D.int)
     (D.field "expires_by" Iso8601.decoder)

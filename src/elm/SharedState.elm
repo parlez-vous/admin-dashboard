@@ -19,7 +19,8 @@ import Dict exposing (Dict)
 import Api.Deserialize as Input
 
 
-type alias SiteDict = Dict Int Input.Site
+type alias UUID = String
+type alias SiteDict = Dict UUID Input.Site
 
 
 allVerified : SiteDict -> Bool

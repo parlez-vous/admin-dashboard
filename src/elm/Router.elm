@@ -13,7 +13,7 @@ import Browser
 import Browser.Navigation as Nav
 import Html.Attributes exposing (class)
 import Url exposing (Url)
-import Url.Parser as Parser exposing (Parser, oneOf, int, (</>))
+import Url.Parser as Parser exposing (Parser, oneOf, string, (</>))
 
 
 
@@ -55,7 +55,7 @@ parser =
   oneOf
     [ Parser.map (Home Home.initModel) Parser.top
     , Parser.map (Dash Dash.initModel) (Parser.s "dash")
-    , Parser.map (Site << Site.initModel) (Parser.s "sites" </> int)
+    , Parser.map (Site << Site.initModel) (Parser.s "sites" </> string)
     , Parser.map (Login Login.initModel) (Parser.s "login")
     , Parser.map (Signup Signup.initModel) (Parser.s "signup")
     , Parser.map (RegisterSite RegisterSite.initModel) (Parser.s "register-site")
@@ -90,11 +90,18 @@ transitionTrigger route state =
       Site.transitionTrigger siteModel privateState
       |> Cmd.map SiteMsg
 
+    ( RegisterSite _, Private privateState ) ->
+      RegisterSite.transitionTrigger privateState
+      |> Cmd.map RegisterSiteMsg 
+
     -- redirect guests on private routes
     ( Dash _, Public { navKey } ) ->
       Nav.pushUrl navKey "/"
 
     ( Site _, Public { navKey } ) ->
+      Nav.pushUrl navKey "/"
+
+    ( RegisterSite _, Public { navKey } ) ->
       Nav.pushUrl navKey "/"
 
     ( Login _, Private { navKey } ) ->
