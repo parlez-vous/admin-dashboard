@@ -10,7 +10,7 @@ import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes exposing (class)
 
-import SharedState exposing (SharedStateUpdate(..), SharedState(..), PublicState)
+import SharedState exposing (SharedStateUpdate(..), SharedState(..), PrivateState)
 
 port removeToken : () -> Cmd msg
 
@@ -33,11 +33,17 @@ getNavKey sharedState =
     Private { navKey } -> navKey
 
 
-logout : PublicState -> ( Cmd msg, SharedStateUpdate )
-logout publicState =
-  ( removeToken ()
-  , SharedState.LogOut publicState
-  )
+logout : PrivateState -> ( Cmd msg, SharedStateUpdate )
+logout { navKey, api } =
+  let
+    publicState =
+      { navKey = navKey
+      , api = api
+      }
+  in
+    ( removeToken ()
+    , SharedState.LogOut publicState
+    )
 
 
 toClass : List String -> Attribute msg
