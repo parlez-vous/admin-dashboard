@@ -8,19 +8,15 @@ module Routes.Home exposing
 
 import Browser.Navigation as Nav
 import Html exposing (..)
-import Html.Events exposing (onClick, onInput, onSubmit)
+import Html.Events exposing (onClick)
 import Html.Attributes exposing (..)
-import Http
 
-
-import Api
-import Api.Output as Output
-import Api.Deserialize as Input
-import Utils exposing (logout, getApi, getNavKey)
+import Utils exposing (logout, getNavKey)
 import SharedState exposing (SharedState(..), SharedStateUpdate)
-import UI.Loader as Loader
 import UI.Button as Btn exposing (link)
 import UI.Nav exposing (withHnav)
+import UI.Link as Link
+
 
 
 
@@ -99,8 +95,8 @@ view sharedState model =
           ]
 
         Public _ ->
-          [ Btn.toHtml <| link Btn.Login "log in"
-          , Btn.toHtml <| link Btn.Signup "sign up"
+          [ Btn.toHtml <| link Link.Login "log in"
+          , Btn.toHtml <| link Link.Signup "sign up"
           ]
 
 

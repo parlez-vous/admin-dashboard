@@ -11,22 +11,19 @@ import Browser.Navigation as Nav
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
-import Http
-import Url
+import Html.Events exposing (onClick)
 import Toasty
 import RemoteData exposing (WebData)
 
 import Api
-import Api.Output as Output
 import Api.Deserialize as Input
 import SharedState exposing (PrivateState, SharedStateUpdate(..), SiteDict)
 import Utils exposing (logout)
-import UI.Icons exposing (logo, cog, rightCaret)
-import UI.Button as U
+import UI.Icons exposing (logo, rightCaret)
 import UI.Input as Input
 import UI.Loader as Loader
 import UI.Toast as Toast
+import UI.Link as Link
 import UI.Nav as ResponsiveNav exposing (withVnav)
 
 
@@ -42,9 +39,6 @@ type alias Model =
 
 type Msg
   = LogOut
-  | SiteInput String
-  | SubmitDomain String
-  | DomainSubmitted (Result Http.Error Input.Site)
   | ToastMsg (Toasty.Msg String)
   | SitesResponse (WebData Input.Sites)
   | ResponsiveNavMsg ResponsiveNav.Msg
@@ -62,13 +56,13 @@ initModel =
 
 
 transitionTrigger : PrivateState -> Cmd Msg
-transitionTrigger { admin, api, navKey } =
+transitionTrigger { admin, api } =
   let
     ( _, token ) = admin
   in
     Api.getSites token api SitesResponse
 
-
+toastBuilder : String -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 toastBuilder = Toasty.addToast Toast.config ToastMsg
 
 update : PrivateState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -84,60 +78,6 @@ update state msg model =
         , Cmd.batch [ logOutCmd, Nav.pushUrl state.navKey "/" ]
         , sharedStateUpdate
         )
-
-    SiteInput rawDomain ->
-      ( { model | hostname = rawDomain
-        }
-      , Cmd.none
-      , NoUpdate
-      )
-
-    SubmitDomain rawDomain ->
-      let
-        data = Output.RegisterSite rawDomain
-
-        ( _, token ) = state.admin
-
-      in
-        ( model
-        , Api.registerSite token state.api DomainSubmitted data
-        , NoUpdate 
-        )
-
-
-    DomainSubmitted result ->
-      case result of
-        Ok site ->
-          let
-            _ = Debug.log "Site registered: " site
-          in
-            ( model, Cmd.none, NoUpdate )
-        
-        Err e ->
-         {--
-         ( m, c ) = ( model, Cmd.none )
-            |> Toasty.addToast Toast.config ToastMsg "Invalid URL"
-         --}
-          let
-            _ = Debug.log "Failed to register site: " e
-
-            ( newModel, cmd ) =
-              case e of
-                Http.BadStatus statusCode ->
-                  if statusCode == 400 then
-                    ( model, Cmd.none )
-                      |>  toastBuilder "Make sure you enter a Fully Qualified Domain Name!" 
-                  else if statusCode == 409 then
-                    ( model, Cmd.none )
-                      |> toastBuilder "This Site is already registered!"
-                  else
-                    ( model, Cmd.none )
-                    |> toastBuilder "Something went wrong"
-
-                _ -> ( model, Cmd.none )
-                  |> toastBuilder "Something went wrong"
-          in
-            ( newModel, cmd, NoUpdate )
 
     -- this gets triggered __some__time__
     -- after a toast gets added to the stack
@@ -165,7 +105,7 @@ update state msg model =
           , UpdateSites <| SharedState.toDict sites
           )
 
-        RemoteData.Failure e ->
+        RemoteData.Failure _ ->
           let
             (newModel, cmd) = ( model, Cmd.none )
               |> toastBuilder "Something went wrong"
@@ -191,44 +131,30 @@ update state msg model =
 
 
 
-type alias Title = String
-
-viewSite : Input.Site -> Html Msg
-viewSite site =
+viewDash : SiteDict -> Html Msg
+viewDash sites =
   let
-    link = "/sites/" ++ String.fromInt site.id
+    registerSiteLink = Link.link Link.RegisterSite "registering"
+      |> Link.toHtml
 
-    status = if site.verified
-      then "Verified"
-      else "Not Verified :("
+    content = 
+      if Dict.isEmpty sites then
+        [ text "hmm... it's awefully quite around here ... start by "
+        , registerSiteLink
+        , text " your site!"
+        ]
 
+      else
+        [ text "look at you go!" ]
   in
-    div [ class "" ]
-      [ header [ class "" ]
-          [ a [ href link ] [ h2 [] [ text site.hostname ] ]
-          
-          -- This is a placeholder for what I imagine
-          -- to be site details
-          , p [] [ text "No data to display" ]
-          ]
-      , div [ class "" ]
-          [ text status ]
-      ]
+    div [] content
 
 
-
-viewDash : Html Msg
-viewDash =
-  div [] [ text "viewing dash ..." ]
-
+type alias Title = String
 
 view : PrivateState -> Model -> (Title, Html Msg)
 view state model = 
   let
-    ( admin, _ ) = state.admin
-    
-    welcomeMsg = "Hello " ++ admin.username ++ "! Looks like you haven't registered any sites yet."
-
     loading =
       div [ class "loading-container" ]
         [ Loader.donut ]
@@ -239,8 +165,8 @@ view state model =
       case state.sites of
         RemoteData.NotAsked -> loading
         RemoteData.Loading  -> loading
-        RemoteData.Success sites -> viewDash
-        RemoteData.Failure err -> div [] [ text "woopsies!" ]
+        RemoteData.Success sites -> viewDash sites
+        RemoteData.Failure _ -> div [] [ text "woopsies!" ]
             
     viewWithNav = withVnav model ResponsiveNavMsg
 
@@ -286,7 +212,7 @@ view state model =
                 ]
           in
             div [ class "relative" ]
-              [ div [ onClick ToggleShowSiteSummary, class "mx-5 my-2 p-2 text-center rounded cursor-pointer hover:bg-gray-300" ]
+              [ div [ onClick ToggleShowSiteSummary, class "mx-5 my-2 p-2 text-center rounded cursor-pointer hover:bg-gray-300 select-none" ]
                   [ div [ ] [ text "Sites ", rightCaret ]
                   , div [ classes ] [ text <| String.fromInt (Dict.size sites) ]
                   ]
@@ -299,7 +225,6 @@ view state model =
       div [ class "font-bold" ]
         [ logo "40"
         , siteNav
-        , div [] [ cog, text "settings" ]
         , button [ class "", onClick LogOut ] [ text "Log Out" ]
         ]
 

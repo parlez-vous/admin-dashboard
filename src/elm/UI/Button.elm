@@ -2,34 +2,26 @@ module UI.Button exposing
   ( button
   , link
   , onClick
-  , Route(..)
   , secondary
   , disabled
   , toHtml
   )
 
 import Html exposing (Html, text)
-import Html.Attributes as Attributes exposing (class, classList, href)
+import Html.Attributes as Attributes exposing (classList, href)
 import Html.Events as E
+import UI.Link as Link
 
 import Utils
 
 
 
 
-type Route
-  = Home
-  | Dash
-  | Site Int
-  | Login
-  | Signup
-
-
 type alias Options msg =
   { disabled : Bool
   , loading : Bool
   , primary : Bool
-  , href : Maybe Route
+  , href : Maybe Link.Route
   , onClick : Maybe msg
   -- icon : Icon
   -- size : Size (Small, Medium, Large)
@@ -59,7 +51,7 @@ onClick msg (Button opts label) =
     Button newOpts label
 
 
-withHref : Route -> Button msg -> Button msg
+withHref : Link.Route -> Button msg -> Button msg
 withHref route (Button opts label) =
   let
     newOpts = { opts | href = Just route }
@@ -72,7 +64,7 @@ button label =
   Button defaultOptions label
 
 
-link : Route -> String -> Button msg
+link : Link.Route -> String -> Button msg
 link route label = 
   Button defaultOptions label
   |> withHref route
@@ -93,15 +85,6 @@ secondary (Button opts label) =
     newOpts = { opts | primary = False }
   in
     Button newOpts label
-
-
-toHref : Route -> String
-toHref route = case route of
-  Home -> "/"
-  Dash -> "/dash"
-  Site id -> "/sites/" ++ String.fromInt id
-  Login -> "/login"
-  Signup -> "/signup"
 
 
 toHtml : Button msg -> Html msg
@@ -155,8 +138,9 @@ toHtml (Button opts label) =
 
       Just route ->
         let
-          linkAttrs = (href <| toHref route) :: defaultAttrs
+          linkAttrs = (href <| Link.toHref route) :: defaultAttrs
         in
+        -- FIXME: swap this out for Link |> toHtml
         Html.a linkAttrs
 
   in

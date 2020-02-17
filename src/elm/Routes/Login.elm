@@ -8,8 +8,8 @@ module Routes.Login exposing
 
 import Browser.Navigation as Nav
 import Html as H exposing (div, text, h1, Html)
-import Html.Attributes as A exposing (class, value)
-import Html.Events exposing (onInput, onSubmit)
+import Html.Attributes exposing (class)
+import Html.Events exposing (onSubmit)
 import Http
 import Toasty
 
@@ -20,6 +20,7 @@ import UI.Nav exposing (withHnav)
 import UI.Button as Btn exposing (button, link)
 import UI.Input as Input
 import UI.Toast as Toast
+import UI.Link as Link
 import Utils
 
 
@@ -141,7 +142,7 @@ loginForm model =
     , passwordInput
     , div [ class "flex justify-center mt-6" ]
         [ Btn.toHtml <| button "Log In"
-        , link Btn.Signup "Sign Up"
+        , link Link.Signup "Sign Up"
           |> Btn.secondary
           |> Btn.toHtml
         ]
@@ -155,7 +156,7 @@ view _ model =
   let
     markup =
       withHnav
-        [ Btn.toHtml <| link Btn.Signup "sign up" ]
+        [ Btn.toHtml <| link Link.Signup "sign up" ]
         [ div [ class "flex flex-col justify-center" ]
             [ h1 [ class "mb-6 text-2xl text-gray-900" ] [ text "Log Into Parlez Vous" ]
             , loginForm model
