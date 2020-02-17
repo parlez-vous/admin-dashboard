@@ -31,3 +31,5 @@ Need to connect this with the [server](https://github.com/parlez-vous/server)
   - Update the `parser` which will take care of url handling
   - Update the `update` function so that it's aware of events that will occur within the new page
   - Update the `view` function so that it renders your page!
+  - Update the `transitionTrigger` function so that any "on-load" events get fired within your new page
+  
