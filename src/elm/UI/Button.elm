@@ -140,7 +140,6 @@ toHtml (Button opts label) =
         let
           linkAttrs = (href <| Link.toHref route) :: defaultAttrs
         in
-        -- FIXME: swap this out for Link |> toHtml
         Html.a linkAttrs
 
   in
