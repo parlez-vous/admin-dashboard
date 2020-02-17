@@ -17,7 +17,7 @@ import Time
 type alias SessionToken = String
 
 type alias Admin =
-  { id       : Int
+  { id       : String
   , username : String
   , created  : Time.Posix
   , updated  : Time.Posix
@@ -56,7 +56,7 @@ type alias AdminWithToken = (Admin, SessionToken)
 adminDecoder : Decoder Admin
 adminDecoder =
   D.map4 Admin
-    (D.field "id" D.int)
+    (D.field "id" D.string)
     (D.field "username" D.string)
     (D.field "created_at" Iso8601.decoder)
     (D.field "updated_at" Iso8601.decoder)
