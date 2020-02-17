@@ -87,9 +87,6 @@ update updateMsg state =
     -- called when user logs in
     SetAdmin admin ->
       case state of
-        Private privateState ->
-          state
-
         Public { navKey, api } ->
           Private
             { navKey = navKey
@@ -97,6 +94,10 @@ update updateMsg state =
             , admin = admin
             , sites = RemoteData.NotAsked
             }
+        
+        Private _ ->
+          state
+
     
     UpdateSites sites ->
       case state of

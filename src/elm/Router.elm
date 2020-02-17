@@ -12,7 +12,6 @@ import Html as Html exposing (..)
 import Browser
 import Browser.Navigation as Nav
 import Html.Attributes exposing (class)
-import RemoteData
 import Url exposing (Url)
 import Url.Parser as Parser exposing (Parser, oneOf, int, (</>))
 
@@ -79,7 +78,7 @@ init url sharedState =
 transitionTrigger : Route -> SharedState -> Cmd Msg
 transitionTrigger route state =
   case ( route, state ) of
-    ( Dash dashModel , Private privateState ) ->
+    ( Dash _ , Private privateState ) ->
       Dash.transitionTrigger privateState
       |> Cmd.map DashMsg
 
@@ -141,7 +140,7 @@ update state msg model =
           , sharedStateUpdate
           )
 
-        Public publicState ->
+        Public _ ->
           ( Dash dashModel
           , Cmd.none
           , SharedState.NoUpdate

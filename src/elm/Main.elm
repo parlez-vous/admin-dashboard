@@ -5,7 +5,6 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
-import RemoteData exposing (WebData)
 import Url
 
 
