@@ -28,9 +28,6 @@ type alias Model =
   { username : String
   , password : String
 
-  -- maybe rename to `locked`?
-  , formSubmitting : Bool
-
   , toasties : Toast.ToastState
   }
 
@@ -47,7 +44,6 @@ initModel : Model
 initModel =
   { username = ""
   , password = ""
-  , formSubmitting = False
   , toasties = Toast.init
   }
 
@@ -73,11 +69,9 @@ update state msg model =
       let
         api = Utils.getApi state
 
-        newModel = { model | formSubmitting = True }
-
         cmd = Api.adminSignin api FormSubmitted model
       in
-        ( newModel
+        ( model
         , cmd
         , SharedState.NoUpdate
         )
