@@ -20,6 +20,7 @@ import RemoteData
 
 import SharedState exposing (PrivateState, SharedStateUpdate)
 import UI.Button as Btn
+import UI.Link as Link
 import UI.Icons exposing (logo, hamburger, rightCaret, x)
 import UI.Loader as Loader
 import Utils as Utils
@@ -116,9 +117,12 @@ withVnav state { navbar } tagger pageContent =
 
             siteList =
               Dict.values sites
-              |> List.map (\site -> text site.hostname)
-
-
+              |> List.map (\site ->
+                Btn.link (Link.Site site.id) site.hostname
+                |> Btn.secondary
+                |> Btn.toHtml
+              )
+              
             siteSummary =
               let
                 defaultClasses = [ "site-summary" ]
@@ -131,8 +135,9 @@ withVnav state { navbar } tagger pageContent =
 
               in
               div [ Utils.toClass siteSummaryClasses ]
-                [ div [ class "p-1 border-b-2 border-solid border-gray-300" ] [ text "Your Sites" ]
-                , div [] siteList
+                [ div [ class "p-1 border-b-2 border-solid border-gray-300" ]
+                    [ text "Your Sites" ]
+                , div [ class "my-4" ] siteList
                 ]
           in
             div [ class "relative" ]
