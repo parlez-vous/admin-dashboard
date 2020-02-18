@@ -131,6 +131,8 @@ type alias Title = String
 view : PrivateState -> Model -> (Title, Html Msg)
 view state model = 
   let
+    welcomeHeader = h1 [] [ text "Welcome!" ]
+
     content =
       case state.sites of
         RemoteData.NotAsked -> Loader.donut
@@ -143,7 +145,8 @@ view state model =
     html =
       viewWithNav
         (div [ class "my-5 mx-8" ]
-          [ content
+          [ welcomeHeader
+          , content
           , Toast.view ToastMsg model.toasties
           ])
   in 
