@@ -14,7 +14,7 @@ import Utils as Utils
 type Route
   = Home
   | Dash
-  | Site Int
+  | Site String
   | Login
   | Signup
   | RegisterSite
@@ -38,7 +38,7 @@ toHref : Route -> String
 toHref route = case route of
   Home -> "/"
   Dash -> "/dash"
-  Site id -> "/sites/" ++ String.fromInt id
+  Site id -> "/sites/" ++ id
   Login -> "/login"
   Signup -> "/signup"
   RegisterSite -> "/register-site"
