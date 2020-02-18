@@ -32,6 +32,12 @@ type alias NavState =
   }
 
 
+type alias WithNavbar a =
+  { a |
+    navbar : NavState
+  }
+
+  
 type Msg
   = LogOut PrivateState
   | ToggleResponsiveNavbar
@@ -45,7 +51,7 @@ init =
   }
 
 
-update : Msg -> { a | navbar : NavState } -> ( { a | navbar : NavState }, Cmd msg, SharedStateUpdate )
+update : Msg -> WithNavbar a -> ( WithNavbar a, Cmd msg, SharedStateUpdate )
 update msg ({ navbar } as parentModel) =
   case msg of
     ToggleResponsiveNavbar ->
