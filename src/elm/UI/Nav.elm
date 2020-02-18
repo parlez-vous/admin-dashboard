@@ -146,8 +146,8 @@ withVnav state { navbar } tagger pageContent =
         _ -> loading
 
     navContent = 
-      div [ class "font-bold" ]
-          [ logo "40"
+      div [ class "font-bold flex flex-col items-center" ]
+          [ div [] [ logo "40" ]
           , siteNav
           , Btn.button "Log Out"
             |> Btn.onClick (tagger <| LogOut state)
@@ -156,7 +156,7 @@ withVnav state { navbar } tagger pageContent =
 
     regularNav =
       header
-        [ class "hidden bg-gray-200 h-full w-1/6 p-5 md:block"
+        [ class "hidden bg-gray-200 h-full w-48 p-5 md:block"
         ]
         [ navContent ]
 
