@@ -132,7 +132,7 @@ toHtml (Button opts label) =
           btnAttrs = 
             case opts.onClick of
               Nothing -> defaultAttrs
-              Just msg -> (E.onClick msg) :: defaultAttrs
+              Just msg -> E.onClick msg :: defaultAttrs
         in
         Html.button btnAttrs
 
