@@ -10,7 +10,6 @@ module Routes.RegisterSite exposing
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Http
-import Toasty
 import RemoteData exposing (WebData)
 import SharedState exposing (PrivateState, SharedStateUpdate(..))
 
@@ -28,7 +27,7 @@ import UI.Nav as ResponsiveNav exposing (withVnav)
 
 type alias Model =
   { hostname : String
-  , toasties : Toast.ToastState
+  , toasts : Toast.ToastState
   , navbar   : ResponsiveNav.NavState
   }
 
@@ -36,7 +35,7 @@ type Msg
   = DomainInput String
   | SubmitDomain String  
   | DomainSubmitted (Result Http.Error Input.Site)
-  | ToastMsg (Toasty.Msg String)
+  | ToastMsg Toast.ToastMsg
   | ResponsiveNavMsg ResponsiveNav.Msg
   | SitesResponse (WebData Input.Sites)
   
@@ -45,7 +44,7 @@ type Msg
 initModel : Model
 initModel =
   { hostname = ""
-  , toasties = Toast.init 
+  , toasts = Toast.init 
   , navbar = ResponsiveNav.init
   }
 
@@ -62,8 +61,8 @@ transitionTrigger { admin, api, sites } =
       _ -> Cmd.none
 
 
-toastBuilder : String -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
-toastBuilder = Toasty.addToast Toast.config ToastMsg
+addToast : String -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
+addToast = Toast.addToast ToastMsg
 
 
 update : PrivateState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -102,7 +101,7 @@ update state msg model =
         RemoteData.Failure _ ->
           let
             (newModel, cmd) = ( model, Cmd.none )
-              |> toastBuilder "Something went wrong"
+              |> addToast "Something went wrong"
           in
           (newModel, cmd, NoUpdate)
 
@@ -130,16 +129,16 @@ update state msg model =
                 Http.BadStatus statusCode ->
                   if statusCode == 400 then
                     ( model, Cmd.none )
-                      |>  toastBuilder "Make sure you enter a Fully Qualified Domain Name!" 
+                      |>  addToast "Make sure you enter a Fully Qualified Domain Name!" 
                   else if statusCode == 409 then
                     ( model, Cmd.none )
-                      |> toastBuilder "This Site is already registered!"
+                      |> addToast "This Site is already registered!"
                   else
                     ( model, Cmd.none )
-                    |> toastBuilder "Something went wrong"
+                    |> addToast "Something went wrong"
 
                 _ -> ( model, Cmd.none )
-                  |> toastBuilder "Something went wrong"
+                  |> addToast "Something went wrong"
           in
             ( newModel, cmd, NoUpdate )
     
@@ -147,7 +146,7 @@ update state msg model =
       let
         ( m , cmd ) =
           model
-          |> Toasty.update Toast.config ToastMsg subMsg
+          |> Toast.update ToastMsg subMsg
 
       in
         ( m
@@ -182,7 +181,7 @@ view state model =
       viewWithNav
         (div [ class "my-5 mx-8" ]
           [ content
-          , Toast.view ToastMsg model.toasties
+          , Toast.view ToastMsg model.toasts
           ])
   in
   

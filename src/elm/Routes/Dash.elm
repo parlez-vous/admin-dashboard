@@ -10,7 +10,6 @@ module Routes.Dash exposing
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Toasty
 import RemoteData exposing (WebData)
 
 import Api
@@ -26,13 +25,13 @@ import UI.Nav as ResponsiveNav exposing (withVnav)
 -- MODEL
 
 type alias Model =
-  { toasties : Toast.ToastState
+  { toasts : Toast.ToastState
   , navbar   : ResponsiveNav.NavState
   }
 
 
 type Msg
-  = ToastMsg (Toasty.Msg String)
+  = ToastMsg Toast.ToastMsg
   | SitesResponse (WebData Input.Sites)
   | ResponsiveNavMsg ResponsiveNav.Msg
 
@@ -40,7 +39,7 @@ type Msg
 
 initModel : Model
 initModel =
-  { toasties = Toast.init
+  { toasts = Toast.init
   , navbar = ResponsiveNav.init
   }
 
@@ -57,9 +56,6 @@ transitionTrigger { admin, api, sites } =
       _ -> Cmd.none
 
 
-toastBuilder : String -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
-toastBuilder = Toasty.addToast Toast.config ToastMsg
-
 update : PrivateState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update state msg model =
   case msg of
@@ -70,7 +66,7 @@ update state msg model =
       let
         ( m , cmd ) =
           model
-          |> Toasty.update Toast.config ToastMsg subMsg
+          |> Toast.update ToastMsg subMsg
 
       in
         ( m
@@ -95,7 +91,7 @@ update state msg model =
         RemoteData.Failure _ ->
           let
             (newModel, cmd) = ( model, Cmd.none )
-              |> toastBuilder "Something went wrong"
+              |> Toast.addToast ToastMsg "Something went wrong"
           in
           (newModel, cmd, NoUpdate)
 
@@ -147,7 +143,7 @@ view state model =
         (div [ class "my-5 mx-8" ]
           [ welcomeHeader
           , content
-          , Toast.view ToastMsg model.toasties
+          , Toast.view ToastMsg model.toasts
           ])
   in 
   ( "Admin Panel", html )

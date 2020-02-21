@@ -11,7 +11,6 @@ import Html as H exposing (div, text, h1, Html)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onSubmit)
 import Http
-import Toasty
 
 
 import Api
@@ -33,10 +32,7 @@ type alias Model =
   , password : String
   , passwordConfirm : String
 
-  -- maybe rename to `locked`?
-  , formSubmitting : Bool
-
-  , toasties : Toast.ToastState
+  , toasts : Toast.ToastState
   }
 
 
@@ -47,7 +43,7 @@ type Msg
   | UpdatePassConfirm String
   | SubmitForm
   | FormSubmitted (Result Http.Error Input.AdminWithToken)
-  | ToastMsg (Toasty.Msg String)
+  | ToastMsg Toast.ToastMsg
 
 
 
@@ -56,8 +52,7 @@ initModel =
   { username = ""
   , password = ""
   , passwordConfirm = ""
-  , formSubmitting = False
-  , toasties = Toast.init
+  , toasts = Toast.init
   }
 
 
@@ -88,11 +83,9 @@ update state msg model =
       let
         api = Utils.getApi state
 
-        newModel = { model | formSubmitting = True }
-
         cmd = Api.adminSignup api FormSubmitted model
       in
-        ( newModel
+        ( model
         , cmd
         , SharedState.NoUpdate
         )
@@ -113,10 +106,8 @@ update state msg model =
 
         Err err ->
           let
-            toastMsg = "Something Went Wrong"
-            
             ( newModel, cmd ) = ( model, Cmd.none )
-              |> Toasty.addToast Toast.config ToastMsg toastMsg
+              |> Toast.addToast ToastMsg "Something Went Wrong"
           in
           ( newModel
           , cmd
@@ -126,8 +117,7 @@ update state msg model =
 
     ToastMsg toastMsg ->
       let
-        ( newModel, cmd ) = model
-          |> Toasty.update Toast.config ToastMsg toastMsg
+        ( newModel, cmd ) = Toast.update ToastMsg toastMsg model
       in
         ( newModel, cmd, SharedState.NoUpdate )
 
@@ -183,7 +173,7 @@ view _ model =
             [ h1 [ class "mb-6 text-2xl text-gray-900" ] [ text "Sign Up" ]
             , loginForm model
             ]
-        , Toast.view ToastMsg model.toasties
+        , Toast.view ToastMsg model.toasts
         ]
 
   in

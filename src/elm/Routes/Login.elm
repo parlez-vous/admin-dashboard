@@ -11,7 +11,6 @@ import Html as H exposing (div, text, h1, Html)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onSubmit)
 import Http
-import Toasty
 
 import Api
 import Api.Deserialize as Input
@@ -28,7 +27,7 @@ type alias Model =
   { username : String
   , password : String
 
-  , toasties : Toast.ToastState
+  , toasts : Toast.ToastState
   }
 
 
@@ -37,14 +36,14 @@ type Msg
   | UpdatePassword String
   | SubmitForm
   | FormSubmitted (Result Http.Error Input.AdminWithToken)
-  | ToastMsg (Toasty.Msg String)
+  | ToastMsg Toast.ToastMsg
 
 
 initModel : Model
 initModel =
   { username = ""
   , password = ""
-  , toasties = Toast.init
+  , toasts = Toast.init
   }
 
 
@@ -95,17 +94,14 @@ update state msg model =
 
         Err e ->
           let
-            toastMsg = "Something Went Wrong"
-
             ( newModel, cmd ) = ( model, Cmd.none )
-              |> Toasty.addToast Toast.config ToastMsg toastMsg
+              |> Toast.addToast ToastMsg "Something Went Wrong"
           in
             (newModel, cmd, SharedState.NoUpdate)
 
     ToastMsg toastMsg ->
       let
-        ( newModel, cmd ) = model
-          |> Toasty.update Toast.config ToastMsg toastMsg
+        ( newModel, cmd ) = Toast.update ToastMsg toastMsg model
       in
         ( newModel, cmd, SharedState.NoUpdate )
 
@@ -155,7 +151,7 @@ view _ model =
             [ h1 [ class "mb-6 text-2xl text-gray-900" ] [ text "Log Into Parlez Vous" ]
             , loginForm model
             ]
-        , Toast.view ToastMsg model.toasties
+        , Toast.view ToastMsg model.toasts
         ]
   in
   ( "Login", markup )

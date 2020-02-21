@@ -1,19 +1,26 @@
 module UI.Toast exposing
   ( ToastState
+  , ToastMsg
   , init
-  , config
+  , update
+  , addToast
   , view
   )
 
 import Html exposing (Html, div, text)
-import Html.Attributes exposing (class, classList)
+import Html.Attributes exposing (class)
 import Toasty exposing (Stack)
 
 import Utils
 
 
 type alias ToastState = Stack String
+type alias ToastMsg = Toasty.Msg String
 
+type alias WithToasts a =
+  { a |
+    toasts : ToastState
+  }
 
 init : ToastState
 init = Toasty.initialState
@@ -21,6 +28,38 @@ init = Toasty.initialState
 
 config : Toasty.Config msg
 config = Toasty.config
+
+
+
+
+
+addToast : (Toasty.Msg String -> a) -> String -> ( WithToasts b, Cmd a) -> ( WithToasts b, Cmd a)
+addToast tagger toast (model, cmd) =
+  let
+    toasties_ =
+      { toasties = model.toasts }
+
+    ({ toasties }, newCmd ) = Toasty.addToast config tagger toast (toasties_, cmd)
+  in
+    ( { model | toasts = toasties }
+    , newCmd
+    )
+
+
+
+
+update : (Toasty.Msg String -> a) -> Toasty.Msg String -> WithToasts b -> (WithToasts b, Cmd a)
+update tagger toastInfo model =
+  let
+    toasties_ =
+      { toasties = model.toasts
+      }
+
+    ({ toasties }, cmd ) = Toasty.update config tagger toastInfo toasties_
+  in
+    ( { model | toasts = toasties }
+    , cmd
+    )
 
 
 -- TODO: customize inset to provide some space
