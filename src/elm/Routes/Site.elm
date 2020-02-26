@@ -1,5 +1,3 @@
--- TODO
-
 module Routes.Site exposing
   ( Model
   , Msg
@@ -12,59 +10,42 @@ module Routes.Site exposing
 
 import Dict
 import Html exposing (..)
+import Html.Attributes exposing (class)
 import RemoteData exposing (WebData)
 
 import Api
 import Api.Deserialize as Input
 import SharedState exposing (PrivateState, SharedStateUpdate)
+import UI.Nav as ResponsiveNav exposing (withVnav)
+import Utils as Utils
 
 
 type alias Model =
   { siteId : String
+  , navbar : ResponsiveNav.NavState
   }
 
 
 
-type Msg = SiteResponse (WebData Input.Site)
+type Msg
+  = SiteResponse (WebData Input.Site)
+  | ResponsiveNavMsg ResponsiveNav.Msg
 
 
 initModel : String -> Model
-initModel = Model
+initModel siteId = Model siteId ResponsiveNav.init
 
 
-transitionTrigger : Model -> PrivateState -> Cmd Msg
-transitionTrigger model { admin, api, sites } =
-  case sites of
-    RemoteData.NotAsked ->
-      let
-        (_, token) = admin
-      in
+transitionTrigger : PrivateState -> Model -> Cmd Msg
+transitionTrigger { admin, api, sites } model =
+  let
+    ( _, token ) = admin
+  in
+    case sites of
+      RemoteData.NotAsked -> 
         Api.getSingleSite token api model.siteId SiteResponse
-
-
-    -- there are 2 cases to handle here:
-    --   1. The site in question exists in the list of sites
-    --   2. The site in question does not exist in the list of sites
-    RemoteData.Success sites_ ->
-      let
-        (_, token) = admin
-
-        -- search the list for `siteId`
-        --   if it exists then don't issue an HTTP request
-        --   if it DOES NOT exist then issue an HTTP request
-        --     for just that one site
-      in
-      case Dict.get model.siteId sites_ of
-        Just site -> Cmd.none
-        Nothing -> 
-          Api.getSingleSite token api model.siteId SiteResponse
-    
-
-    -- TODO: handle Loading state
-    --   how would you have a loading state when first entering the page?
-    --   this could be caused by quickly going back and forth between pages
-    -- TODO: handle Failure e state
-    _ -> Cmd.none
+      
+      _ -> Cmd.none
 
 
 
@@ -79,22 +60,60 @@ update state msg model =
 
         _ -> ( model, Cmd.none, SharedState.NoUpdate )
 
+    ResponsiveNavMsg subMsg ->
+      ResponsiveNav.update subMsg model
+
+
+viewSiteNotVerifiedWarning : Input.Site -> Html Msg
+viewSiteNotVerifiedWarning site =
+  let
+    styles =
+        [ "border"
+        , "border-solid"
+        , "rounded"
+        , "border-gray-400"
+        , "w-full"
+        , "mt-8"
+        , "p-5"
+        , "md:w-1/2"
+        , "md:mx-auto"
+        ]
+  in
+    div [ Utils.toClass styles ]
+      [ h2 [] [ text "Site Not Verified!" ]
+      , p [] [ text "please add the following TXT record to your site:" ]
+      , div [] [ text site.dnsTag ]
+      ]
+
+viewSite : Input.Site -> Html Msg
+viewSite site =
+  if site.verified then
+    div [] [ text "ayyy you all good!" ]
+  else
+    viewSiteNotVerifiedWarning site
+    
 
 type alias Title = String
 
-view : PrivateState -> Model -> (Title, Html msg)
-view state { siteId } =
+view : PrivateState -> Model -> (Title, Html Msg)
+view state model =
   let
-    site = case state.sites of 
+    viewWithNav = withVnav state model ResponsiveNavMsg
+
+    maybeSite = case state.sites of 
       RemoteData.Success sites_ ->
-        Dict.get siteId sites_
+        Dict.get model.siteId sites_
 
       _ -> Nothing
 
-    info = case site of
-      Just site_ -> "Yeyyyy"
-      Nothing -> "boooo"
+    info = case maybeSite of
+      Nothing -> text "site not found"
+      Just site ->
+        div [ class "m-2 md:m-12 w-full" ]
+          [ h1 [ class "text-2xl" ] [ text site.hostname ]
+          , viewSite site
+          ]
   in
   ( "Site"
-  , div [ ] [ text info ]
+  , viewWithNav info
   )

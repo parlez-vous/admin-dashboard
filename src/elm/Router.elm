@@ -87,7 +87,7 @@ transitionTrigger route state =
       |> Cmd.map DashMsg
 
     ( Site siteModel, Private privateState ) ->
-      Site.transitionTrigger siteModel privateState
+      Site.transitionTrigger privateState siteModel
       |> Cmd.map SiteMsg
 
     ( RegisterSite _, Private privateState ) ->
