@@ -4,11 +4,6 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const SOURCE_DIR = path.join(__dirname, 'src')
 
-const mode = process.env.NODE_ENV === 'production'
-  ? 'production'
-  : 'development'
-
-
 // Copy the specified environment variables into an object we can pass to
 // webpack's DefinePlugin
 const copyArgs = (args) =>
@@ -20,9 +15,16 @@ const copyArgs = (args) =>
     }),
     {}
   )
-  
-module.exports = {
-  mode,
+
+
+const IS_PROD = process.env.NODE_ENV === 'production'
+const IS_DEVELOPMENT = !IS_PROD
+
+
+const commonConfig = {
+  mode: IS_PROD
+    ? 'production'
+    : 'development',
   
   entry: {
     app: [
@@ -52,7 +54,10 @@ module.exports = {
         loader:  'elm-webpack-loader',
         options: {
           cache: false,
-          debug: true
+          // turns on the time-travelling debugger
+          // this is a flag that is passed to elm make
+          debug: IS_DEVELOPMENT,
+          optimize: IS_PROD,
         }
       },
     ],
@@ -76,10 +81,17 @@ module.exports = {
       ]),
     })
   ],
+}
 
+const developmentConfig = {
   devServer: {
     inline: true,
     stats: { colors: true },
     historyApiFallback: true
   },
-};
+}
+  
+  
+module.exports = IS_DEVELOPMENT
+  ? { ...commonConfig, ...developmentConfig }
+  : commonConfig;
