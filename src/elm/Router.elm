@@ -30,8 +30,6 @@ import UI.Toast as Toast
 
 
 
--- perhaps each page contains a Route
--- data structure, as opposed to a Model
 type Route
   = Home Home.Model
   | Dash Dash.Model
