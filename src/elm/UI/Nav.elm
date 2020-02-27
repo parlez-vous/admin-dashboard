@@ -94,7 +94,7 @@ hnav children =
 
 
 
-withVnav : PrivateState -> ({ a | navbar : NavState }) -> (Msg -> msg) -> Html msg -> Html msg
+withVnav : PrivateState -> { a | navbar : NavState } -> (Msg -> msg) -> Html msg -> Html msg
 withVnav state { navbar } tagger pageContent =
   let
     loading =

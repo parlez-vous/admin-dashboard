@@ -11,16 +11,15 @@ import Html exposing (..)
 import Html.Events exposing (onClick)
 import Html.Attributes exposing (..)
 
-import Utils exposing (logout, getNavKey)
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 import UI.Button as Btn exposing (link)
 import UI.Nav exposing (withHnav)
 import UI.Link as Link
+import Utils exposing (logout, getNavKey)
 
 
 
 
--- PORTS
 
 
 
