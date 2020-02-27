@@ -2,7 +2,6 @@ module Routes.Dash exposing
   ( Model
   , Msg
   , initModel
-  , transitionTrigger
   , update
   , view
   )
@@ -10,12 +9,9 @@ module Routes.Dash exposing
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import RemoteData exposing (WebData)
+import RemoteData
 
-import Api
-import Api.Deserialize as Input
 import SharedState exposing (PrivateState, SharedStateUpdate(..), SiteDict)
-import UI.Input as Input
 import UI.Toast as Toast
 import UI.Link as Link
 import UI.Loader as Loader
@@ -26,13 +22,12 @@ import UI.Nav as ResponsiveNav exposing (withVnav)
 
 type alias Model =
   { toasts : Toast.ToastState
-  , navbar   : ResponsiveNav.NavState
+  , navbar : ResponsiveNav.NavState
   }
 
 
 type Msg
   = ToastMsg Toast.ToastMsg
-  | SitesResponse (WebData Input.Sites)
   | ResponsiveNavMsg ResponsiveNav.Msg
 
 
@@ -44,20 +39,8 @@ initModel =
   }
 
 
-transitionTrigger : PrivateState -> Cmd Msg
-transitionTrigger { admin, api, sites } =
-  let
-    ( _, token ) = admin
-  in
-    case sites of
-      RemoteData.NotAsked -> 
-        Api.getSites token api SitesResponse
-      
-      _ -> Cmd.none
-
-
 update : PrivateState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
-update state msg model =
+update _ msg model =
   case msg of
     -- this gets triggered __some__time__
     -- after a toast gets added to the stack
@@ -77,28 +60,6 @@ update state msg model =
     ResponsiveNavMsg subMsg ->
       ResponsiveNav.update subMsg model
 
-    SitesResponse response ->
-      let 
-        _ = Debug.log "SitesResponse" response
-      in
-      case response of
-        RemoteData.Success sites ->
-          ( model
-          , Cmd.none
-          , UpdateSites <| SharedState.toDict sites
-          )
-
-        RemoteData.Failure _ ->
-          let
-            (newModel, cmd) = ( model, Cmd.none )
-              |> Toast.addToast ToastMsg "Something went wrong"
-          in
-          (newModel, cmd, NoUpdate)
-
-        _ ->
-          ( model, Cmd.none, NoUpdate )
-
-  
 
 
 

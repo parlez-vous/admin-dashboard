@@ -2,7 +2,6 @@ module Routes.RegisterSite exposing
   ( Model
   , Msg
   , initModel
-  , transitionTrigger
   , update
   , view
   )
@@ -10,7 +9,6 @@ module Routes.RegisterSite exposing
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Http
-import RemoteData exposing (WebData)
 import SharedState exposing (PrivateState, SharedStateUpdate(..))
 
 import Api
@@ -37,7 +35,6 @@ type Msg
   | DomainSubmitted (Result Http.Error Input.Site)
   | ToastMsg Toast.ToastMsg
   | ResponsiveNavMsg ResponsiveNav.Msg
-  | SitesResponse (WebData Input.Sites)
   
 
 
@@ -47,18 +44,6 @@ initModel =
   , toasts = Toast.init 
   , navbar = ResponsiveNav.init
   }
-
-
-transitionTrigger : PrivateState -> Cmd Msg
-transitionTrigger { admin, api, sites } =
-  let
-    ( _, token ) = admin
-  in
-    case sites of
-      RemoteData.NotAsked -> 
-        Api.getSites token api SitesResponse
-      
-      _ -> Cmd.none
 
 
 addToast : String -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
@@ -86,27 +71,6 @@ update state msg model =
         , Api.registerSite token state.api DomainSubmitted data
         , NoUpdate 
         )
-
-    SitesResponse response ->
-      let 
-        _ = Debug.log "SitesResponse" response
-      in
-      case response of
-        RemoteData.Success sites ->
-          ( model
-          , Cmd.none
-          , UpdateSites <| SharedState.toDict sites
-          )
-
-        RemoteData.Failure _ ->
-          let
-            (newModel, cmd) = ( model, Cmd.none )
-              |> addToast "Something went wrong"
-          in
-          (newModel, cmd, NoUpdate)
-
-        _ ->
-          ( model, Cmd.none, NoUpdate )
 
     DomainSubmitted result ->
       case result of

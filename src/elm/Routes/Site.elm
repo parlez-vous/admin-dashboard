@@ -2,7 +2,6 @@ module Routes.Site exposing
   ( Model
   , Msg
   , initModel
-  , transitionTrigger
   , update
   , view
   )
@@ -11,9 +10,8 @@ module Routes.Site exposing
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class)
-import RemoteData exposing (WebData)
+import RemoteData
 
-import Api
 import Api.Deserialize as Input
 import SharedState exposing (PrivateState, SharedStateUpdate)
 import UI.Nav as ResponsiveNav exposing (withVnav)
@@ -28,38 +26,16 @@ type alias Model =
 
 
 type Msg
-  = SiteResponse (WebData Input.Site)
-  | ResponsiveNavMsg ResponsiveNav.Msg
+  = ResponsiveNavMsg ResponsiveNav.Msg
 
 
 initModel : String -> Model
 initModel siteId = Model siteId ResponsiveNav.init
 
 
-transitionTrigger : PrivateState -> Model -> Cmd Msg
-transitionTrigger { admin, api, sites } model =
-  let
-    ( _, token ) = admin
-  in
-    case sites of
-      RemoteData.NotAsked -> 
-        Api.getSingleSite token api model.siteId SiteResponse
-      
-      _ -> Cmd.none
-
-
-
-
 update : PrivateState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
-update state msg model =
+update _ msg model =
   case msg of
-    SiteResponse response ->
-      case response of
-        RemoteData.Success site ->
-          ( model, Cmd.none, SharedState.InsertSite site)
-
-        _ -> ( model, Cmd.none, SharedState.NoUpdate )
-
     ResponsiveNavMsg subMsg ->
       ResponsiveNav.update subMsg model
 

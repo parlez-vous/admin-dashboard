@@ -2,21 +2,23 @@ module Router exposing
   ( Model
   , Msg(..)
   , init
-  , transitionTrigger
   , update
   , view
   )
 
 
-import Html as Html exposing (..)
 import Browser
 import Browser.Navigation as Nav
+import Html as Html exposing (..)
 import Html.Attributes exposing (class)
+import RemoteData exposing (WebData)
 import Url exposing (Url)
 import Url.Parser as Parser exposing (Parser, oneOf, string, (</>))
 
 
 
+import Api
+import Api.Deserialize as Input
 import Routes.Home as Home
 import Routes.Dash as Dash
 import Routes.Site as Site
@@ -24,9 +26,12 @@ import Routes.Login as Login
 import Routes.Signup as Signup
 import Routes.RegisterSite as RegisterSite
 import SharedState exposing (SharedState(..), SharedStateUpdate)
+import UI.Toast as Toast
 
 
 
+-- perhaps each page contains a Route
+-- data structure, as opposed to a Model
 type Route
   = Home Home.Model
   | Dash Dash.Model
@@ -37,11 +42,16 @@ type Route
   | NotFound
 
 
-type alias Model = Route
+type alias Model =
+  { activeRoute : Route
+  , toasts : Toast.ToastState
+  }
 
 
 type Msg
   = UrlChange Url
+  | ToastMsg Toast.ToastMsg
+  | SitesResponse (WebData Input.Sites)
   | HomeMsg Home.Msg
   | DashMsg Dash.Msg
   | SiteMsg Site.Msg
@@ -61,18 +71,18 @@ parser =
     , Parser.map (RegisterSite RegisterSite.initModel) (Parser.s "register-site")
     ]
 
-fromUrl : Url -> Model
+fromUrl : Url -> Route
 fromUrl = Maybe.withDefault NotFound << Parser.parse parser
 
 
 init : Url -> SharedState -> ( Model, Cmd Msg )
 init url sharedState =
   let
-    model = fromUrl url
+    route = fromUrl url
 
   in
-  ( model
-  , transitionTrigger model sharedState
+  ( { activeRoute = route, toasts = Toast.init }
+  , transitionTrigger route sharedState
   )
 
 
@@ -82,18 +92,6 @@ init url sharedState =
 transitionTrigger : Route -> SharedState -> Cmd Msg
 transitionTrigger route state =
   case ( route, state ) of
-    ( Dash _ , Private privateState ) ->
-      Dash.transitionTrigger privateState
-      |> Cmd.map DashMsg
-
-    ( Site siteModel, Private privateState ) ->
-      Site.transitionTrigger privateState siteModel
-      |> Cmd.map SiteMsg
-
-    ( RegisterSite _, Private privateState ) ->
-      RegisterSite.transitionTrigger privateState
-      |> Cmd.map RegisterSiteMsg 
-
     -- redirect guests on private routes
     ( Dash _, Public { navKey } ) ->
       Nav.pushUrl navKey "/"
@@ -104,37 +102,70 @@ transitionTrigger route state =
     ( RegisterSite _, Public { navKey } ) ->
       Nav.pushUrl navKey "/"
 
+    -- redirect authed users away from public routes
     ( Login _, Private { navKey } ) ->
       Nav.pushUrl navKey "/dash"
 
     ( Signup _, Private { navKey } ) ->
       Nav.pushUrl navKey "/dash"
     
-    _ -> Cmd.none
-      
+    ( _, Private { admin, api, sites } ) ->
+      let
+        ( _, token) = admin
+      in
+        case sites of
+          RemoteData.NotAsked ->
+            Api.getSites token api SitesResponse
+          
+          _ -> Cmd.none
+
+    _ ->
+      Cmd.none
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update state msg model =
-  case (msg, model) of
+  case (msg, model.activeRoute) of
     ( UrlChange url, _ ) -> 
       let
-        route = fromUrl url
+        newRoute = fromUrl url
 
-        transitionTriggerMsg = transitionTrigger route state
+        transitionTriggerMsg = transitionTrigger newRoute state
 
       in
-      ( route
+      ( { model | activeRoute = newRoute }
       , transitionTriggerMsg
       , SharedState.NoUpdate
       )
+
+    ( SitesResponse response, _ ) ->
+      let 
+        _ = Debug.log "SitesResponse" response
+      in
+      case response of
+        RemoteData.Success sites ->
+          ( model
+          , Cmd.none
+          , SharedState.UpdateSites <| SharedState.toDict sites
+          )
+
+        RemoteData.Failure _ ->
+          let
+            (newModel, cmd) = ( model, Cmd.none )
+              |> Toast.addToast ToastMsg "Something went wrong"
+          in
+          (newModel, cmd, SharedState.NoUpdate)
+
+        _ ->
+          ( model, Cmd.none, SharedState.NoUpdate )
+
       
     ( HomeMsg homeMsg, Home homeModel ) ->
       let 
-        ( newModel, homeCmd, sharedStateUpdate ) =
+        ( newHomeModel, homeCmd, sharedStateUpdate ) =
           Home.update state homeMsg homeModel
       in
-        ( Home newModel
+        ( { model | activeRoute = Home newHomeModel }
         , Cmd.map HomeMsg homeCmd
         , sharedStateUpdate
         )
@@ -143,16 +174,16 @@ update state msg model =
       case state of
         Private privateState ->
           let
-            ( newModel, dashCmd, sharedStateUpdate ) =
+            ( newDashModel, dashCmd, sharedStateUpdate ) =
               Dash.update privateState dashMsg dashModel
           in
-          ( Dash newModel
+          ( { model | activeRoute = Dash newDashModel }
           , Cmd.map DashMsg dashCmd
           , sharedStateUpdate
           )
 
         Public _ ->
-          ( Dash dashModel
+          ( { model | activeRoute = Dash dashModel }
           , Cmd.none
           , SharedState.NoUpdate
           )
@@ -161,37 +192,37 @@ update state msg model =
       case state of
         Private privateState ->
           let
-            ( newModel, siteCmd, sharedStateUpdate ) =
+            ( newSiteModel, siteCmd, sharedStateUpdate ) =
               Site.update privateState siteMsg siteModel
           in
-            ( Site newModel
+            ( { model | activeRoute = Site newSiteModel }
             , Cmd.map SiteMsg siteCmd
             , sharedStateUpdate
             )
 
         Public _ ->
-          ( Site siteModel
+          ( model
           , Cmd.none
           , SharedState.NoUpdate
           )
 
     ( LoginMsg loginMsg, Login loginModel ) ->
       let
-        ( newModel, loginCmd, sharedStateUpdate ) = 
+        ( newLoginModel, loginCmd, sharedStateUpdate ) = 
           Login.update state loginMsg loginModel
       
       in
-        ( Login newModel
+        ( { model | activeRoute = Login newLoginModel }
         , Cmd.map LoginMsg loginCmd
         , sharedStateUpdate
         )
 
     ( SignupMsg signupMsg, Signup signupModel ) ->
       let
-        ( newModel, signupCmd, sharedStateUpdate ) =
+        ( newSignupModel, signupCmd, sharedStateUpdate ) =
           Signup.update state signupMsg signupModel
       in
-        ( Signup newModel
+        ( { model | activeRoute = Signup newSignupModel }
         , Cmd.map SignupMsg signupCmd
         , sharedStateUpdate
         )
@@ -200,16 +231,16 @@ update state msg model =
       case state of
         Private privateState ->
           let
-            ( newModel, registerSiteCmd, sharedStateUpdate ) =
+            ( newRegisterSiteModel, registerSiteCmd, sharedStateUpdate ) =
               RegisterSite.update privateState registerSiteMsg registersiteModel
           in
-            ( RegisterSite newModel
+            ( { model | activeRoute = RegisterSite newRegisterSiteModel }
             , Cmd.map RegisterSiteMsg registerSiteCmd
             , sharedStateUpdate
             )
 
         Public _ ->
-          ( RegisterSite registersiteModel
+          ( model
           , Cmd.none
           , SharedState.NoUpdate
           )
@@ -229,15 +260,18 @@ update state msg model =
 
 
 view : (Msg -> msg) -> SharedState -> Model -> Browser.Document msg
-view toMsg sharedState routerModel =
+view toMsg sharedState model =
   let
     redirectPage =
       ( "Redirecting ..."
       , div [] [ text "Redirecting ..."]
       )
 
+    toastView = Toast.view ToastMsg model.toasts
+      |> Html.map toMsg
+
     ( title, html ) =
-      case routerModel of
+      case model.activeRoute of
         Home homeModel ->
           Home.view sharedState homeModel
           |> Tuple.mapSecond (Html.map HomeMsg)
@@ -298,5 +332,5 @@ view toMsg sharedState routerModel =
 
   in
   { title = title ++ " | Parlez-Vous "
-  , body = [ div [ class "bg-gray-100" ] [ html ] ]
+  , body = [ div [ class "bg-gray-100" ] [ html, toastView ] ]
   }
