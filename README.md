@@ -9,6 +9,12 @@ Need to connect this with the [server](https://github.com/parlez-vous/server)
 
 
 
+### Optimizations
+
+https://discourse.elm-lang.org/t/optimize-elm-compilation-with-webpack/2191/8
+
+
+
 ## Architectural Inspiration
 
 - [elm-shared-state](https://github.com/ohanhi/elm-shared-state)
