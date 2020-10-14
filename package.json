@@ -4,12 +4,12 @@
   "description": "",
   "main": "Main.elm",
   "scripts": {
-    "start": "webpack-dev-server",
+    "start": "webpack-dev-server --port 3060",
     "build": "NODE_ENV=production webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Giorgio Delgado",
+  "license": "UNLICENSED",
   "dependencies": {
     "autoprefixer": "9.7.4",
     "css-loader": "2.1.0",
