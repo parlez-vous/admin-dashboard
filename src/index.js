@@ -6,7 +6,7 @@ const Elm = require('./elm/Main.elm').Elm;
 
 const storagekey = '@pv/token'
 
-const api = process.env.API || 'https://parlez-vous-web.appspot.com'
+const api = process.env.API || 'https://staging-269700.appspot.com'
 
 const token = localStorage.getItem(storagekey)
 
