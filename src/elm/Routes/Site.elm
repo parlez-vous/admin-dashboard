@@ -58,7 +58,7 @@ viewSiteNotVerifiedWarning site =
     div [ Utils.toClass styles ]
       [ h2 [] [ text "Site Not Verified!" ]
       , p [] [ text "please add the following TXT record to your site:" ]
-      , div [] [ text site.dnsTag ]
+      , div [ class "text-gray-600" ] [ text site.dnsTag ]
       ]
 
 viewSite : Input.Site -> Html Msg
