@@ -257,8 +257,13 @@ update state msg model =
 --}
 
 
-view : (Msg -> msg) -> SharedState -> Model -> Browser.Document msg
-view toMsg sharedState model =
+type alias AppView =
+    { title : String
+    , body : Html Msg
+    }
+
+view : SharedState -> Model -> AppView
+view sharedState model =
   let
     redirectPage =
       ( "Redirecting ..."
@@ -266,14 +271,12 @@ view toMsg sharedState model =
       )
 
     toastView = Toast.view ToastMsg model.toasts
-      |> Html.map toMsg
 
     ( title, html ) =
       case model.activeRoute of
         Home homeModel ->
           Home.view sharedState homeModel
           |> Tuple.mapSecond (Html.map HomeMsg)
-          |> Tuple.mapSecond (Html.map toMsg)
           
 
         Dash dashModel ->
@@ -283,7 +286,6 @@ view toMsg sharedState model =
             Private privateState -> 
               Dash.view privateState dashModel
               |> Tuple.mapSecond (Html.map DashMsg)
-              |> Tuple.mapSecond (Html.map toMsg)
 
 
         Site siteModel ->
@@ -293,7 +295,6 @@ view toMsg sharedState model =
             Private privateState ->
               Site.view privateState siteModel
               |> Tuple.mapSecond (Html.map SiteMsg)
-              |> Tuple.mapSecond (Html.map toMsg)
 
         Login loginModel ->
           case sharedState of
@@ -302,7 +303,6 @@ view toMsg sharedState model =
             Public publicState ->
               Login.view publicState loginModel
                 |> Tuple.mapSecond (Html.map LoginMsg)
-                |> Tuple.mapSecond (Html.map toMsg)
 
         Signup signupModel ->
           case sharedState of
@@ -311,7 +311,6 @@ view toMsg sharedState model =
             Public publicState ->
               Signup.view publicState signupModel
                 |> Tuple.mapSecond (Html.map SignupMsg)
-                |> Tuple.mapSecond (Html.map toMsg)
 
         RegisterSite registerSiteModel ->
           case sharedState of
@@ -320,15 +319,13 @@ view toMsg sharedState model =
             Private privateState ->
               RegisterSite.view privateState registerSiteModel
               |> Tuple.mapSecond (Html.map RegisterSiteMsg)
-              |> Tuple.mapSecond (Html.map toMsg)
             
 
         NotFound ->
           ( "Woops!", div [] [ text "404 Not Found"] )
 
-          
-
   in
   { title = title ++ " | Parlez-Vous "
-  , body = [ div [ class "bg-gray-100" ] [ html, toastView ] ]
+  , body = div [ class "bg-gray-100" ] [ html, toastView ]
   }
+

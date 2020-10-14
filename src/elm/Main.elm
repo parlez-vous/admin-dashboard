@@ -198,7 +198,12 @@ view : Model -> Browser.Document Msg
 view model =
   case model of
     Ready { state, router } ->
-      Router.view RouterMsg state router
+        let
+            { title, body } = Router.view state router
+        in
+        { title = title
+        , body = [ Html.map RouterMsg body ]
+        }
 
     NotReady _ ->
       { title = "Loading ..."
