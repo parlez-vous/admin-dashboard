@@ -1,153 +1,208 @@
 module Routes.RegisterSite exposing
-  ( Model
-  , Msg
-  , initModel
-  , update
-  , view
-  )
+    ( Model
+    , Msg
+    , initModel
+    , update
+    , view
+    )
 
+import Ant.Form as Form exposing (Form)
+import Ant.Form.View as FV
+import Api
+import Api.Deserialize as Input
+import Api.Output as Output
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Http
 import SharedState exposing (PrivateState, SharedStateUpdate(..))
-
-import Api
-import Api.Deserialize as Input
-import Api.Output as Output
-import UI.Button as Btn
-import UI.Input as Input
 import UI.Link exposing (externalLink)
-import UI.Toast as Toast
 import UI.Nav as ResponsiveNav exposing (withVnav)
+import UI.Toast as Toast
+import Url exposing (Url)
 
 
+type alias FormValues =
+    { domain : String
+    }
 
 
 type alias Model =
-  { hostname : String
-  , toasts : Toast.ToastState
-  , navbar   : ResponsiveNav.NavState
-  }
+    { registerSiteForm : FV.Model FormValues
+    , toasts : Toast.ToastState
+    , navbar : ResponsiveNav.NavState
+    }
+
 
 type Msg
-  = DomainInput String
-  | SubmitDomain String  
-  | DomainSubmitted (Result Http.Error Input.Site)
-  | ToastMsg Toast.ToastMsg
-  | ResponsiveNavMsg ResponsiveNav.Msg
-  
+    = FormChanged (FV.Model FormValues)
+    | RegisterSite Url
+    | FormSubmitted (Result Http.Error Input.Site)
+    | ToastMsg Toast.ToastMsg
+    | ResponsiveNavMsg ResponsiveNav.Msg
 
 
 initModel : Model
 initModel =
-  { hostname = ""
-  , toasts = Toast.init 
-  , navbar = ResponsiveNav.init
-  }
+    let
+        formModel =
+            FV.idle
+                { domain = ""
+                }
+    in
+    { registerSiteForm = formModel
+    , toasts = Toast.init
+    , navbar = ResponsiveNav.init
+    }
 
 
 addToast : String -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
-addToast = Toast.addToast ToastMsg
+addToast =
+    Toast.addToast ToastMsg
+
+
+form : Form FormValues Msg
+form =
+    let
+        domainInputField =
+            Form.inputField
+                { parser =
+                    \rawInput ->
+                        let
+                            withProtocol =
+                                "https://" ++ rawInput
+                        in
+                        case Url.fromString withProtocol of
+                            Nothing ->
+                                Err "Invalid URL"
+
+                            Just url ->
+                                -- Naive check to see if the URL is a FQDN
+                                if String.contains "." url.host then
+                                    Ok url
+
+                                else
+                                    Err "The Url must be a fully qualified domain name"
+                , value = .domain
+                , update = \value values -> { values | domain = value }
+                , error = always Nothing
+                , attributes =
+                    { label = "Domain Name"
+                    , placeholder = "example.com"
+                    }
+                }
+    in
+    Form.succeed RegisterSite
+        |> Form.append domainInputField
 
 
 update : PrivateState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update state msg model =
-  case msg of
-    DomainInput rawDomain ->
-      ( { model | hostname = rawDomain
-        }
-      , Cmd.none
-      , NoUpdate
-      )
+    case msg of
+        FormChanged newForm ->
+            ( { model
+                | registerSiteForm = newForm
+              }
+            , Cmd.none
+            , NoUpdate
+            )
 
-    SubmitDomain rawDomain ->
-      let
-        data = Output.RegisterSite rawDomain
+        RegisterSite url ->
+            let
+                data =
+                    Output.RegisterSite url.host
 
-        ( _, token ) = state.admin
+                ( _, token ) =
+                    state.admin
+            in
+            ( model
+            , Api.registerSite token state.api FormSubmitted data
+            , NoUpdate
+            )
 
-      in
-        ( model
-        , Api.registerSite token state.api DomainSubmitted data
-        , NoUpdate 
-        )
+        FormSubmitted result ->
+            case result of
+                Ok site ->
+                    let
+                        _ =
+                            Debug.log "Site registered: " site
+                    in
+                    ( model, Cmd.none, NoUpdate )
 
-    DomainSubmitted result ->
-      case result of
-        Ok site ->
-          let
-            _ = Debug.log "Site registered: " site
-          in
-            ( model, Cmd.none, NoUpdate )
+                Err e ->
+                    let
+                        _ =
+                            Debug.log "Failed to register site: " e
 
-        Err e ->
-         {--
-         ( m, c ) = ( model, Cmd.none )
-            |> Toasty.addToast Toast.config ToastMsg "Invalid URL"
-         --}
-          let
-            _ = Debug.log "Failed to register site: " e
+                        ( newModel, cmd ) =
+                            case e of
+                                Http.BadStatus statusCode ->
+                                    if statusCode == 400 then
+                                        ( model, Cmd.none )
+                                            |> addToast "Make sure you enter a Fully Qualified Domain Name!"
 
-            ( newModel, cmd ) =
-              case e of
-                Http.BadStatus statusCode ->
-                  if statusCode == 400 then
-                    ( model, Cmd.none )
-                      |>  addToast "Make sure you enter a Fully Qualified Domain Name!" 
-                  else if statusCode == 409 then
-                    ( model, Cmd.none )
-                      |> addToast "This Site is already registered!"
-                  else
-                    ( model, Cmd.none )
-                    |> addToast "Something went wrong"
+                                    else if statusCode == 409 then
+                                        ( model, Cmd.none )
+                                            |> addToast "This Site is already registered!"
 
-                _ -> ( model, Cmd.none )
-                  |> addToast "Something went wrong"
-          in
-            ( newModel, cmd, NoUpdate )
-    
-    ToastMsg subMsg ->
-      let
-        ( m , cmd ) =
-          model
-          |> Toast.update ToastMsg subMsg
+                                    else
+                                        ( model, Cmd.none )
+                                            |> addToast "Something went wrong"
 
-      in
-        ( m
-        , cmd
-        , NoUpdate
-        )
+                                _ ->
+                                    ( model, Cmd.none )
+                                        |> addToast "Something went wrong"
+                    in
+                    ( newModel, cmd, NoUpdate )
 
-    ResponsiveNavMsg subMsg ->
-      ResponsiveNav.update subMsg model
+        ToastMsg subMsg ->
+            let
+                ( m, cmd ) =
+                    model
+                        |> Toast.update ToastMsg subMsg
+            in
+            ( m
+            , cmd
+            , NoUpdate
+            )
+
+        ResponsiveNavMsg subMsg ->
+            ResponsiveNav.update subMsg model
 
 
-type alias Title = String
+type alias Title =
+    String
 
-view : PrivateState -> Model -> (Title, Html Msg)
+
+view : PrivateState -> Model -> ( Title, Html Msg )
 view state model =
-  let
-    viewWithNav = withVnav state model ResponsiveNavMsg
+    let
+        viewWithNav =
+            withVnav state model ResponsiveNavMsg
 
-    content =
-      div []
-        [ h1 [] [ text "Register a domain" ]
-        , text "Ensure that the domain you enter is a "
-        , externalLink "https://en.wikipedia.org/wiki/Fully_qualified_domain_name" "fully-qualified domain name"
-        , Input.input (Input.Url model.hostname DomainInput)
-          |> Input.toHtml
-        , Btn.button "submit"
-          |> Btn.onClick (SubmitDomain model.hostname)
-          |> Btn.toHtml
-        ]
+        domainInputForm =
+            FV.toHtml
+                { onChange = FormChanged
+                , action = "Submit"
+                , loading = "loading ..."
+                , validation = FV.ValidateOnSubmit
+                }
+                form
+                model.registerSiteForm
 
-    html =
-      viewWithNav
-        (div [ class "my-5 mx-8" ]
-          [ content
-          , Toast.view ToastMsg model.toasts
-          ])
-  in
-  
-  ( "Register Site", html )
-  
+        content =
+            div []
+                [ h1 [] [ text "Register a domain" ]
+                , text "Ensure that the domain you enter is a "
+                , externalLink "https://en.wikipedia.org/wiki/Fully_qualified_domain_name" "fully-qualified domain name"
+                , domainInputForm
+                ]
+
+        html =
+            viewWithNav
+                (div [ class "my-5 mx-8" ]
+                    [ content
+                    , Toast.view ToastMsg model.toasts
+                    ]
+                )
+    in
+    ( "Register Site", html )
