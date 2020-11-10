@@ -93,14 +93,14 @@ withVnav state { navbar } tagger pageContent =
         siteNav =
             case state.sites of
                 RemoteData.Success sites ->
-                        Dict.values sites
-                            |> List.map
-                                (\site ->
-                                    Text.text site.hostname
-                                        |> Text.withType (Text.Link (Link.toHref <| Link.Site site.id) Text.Self)
-                                        |> Text.toHtml
-                                )
-                            |> div []
+                    Dict.values sites
+                        |> List.map
+                            (\site ->
+                                Text.text site.hostname
+                                    |> Text.withType (Text.Link (Link.toHref <| Link.Site site.id) Text.Self)
+                                    |> Text.toHtml
+                            )
+                        |> div []
 
                 _ ->
                     loading
@@ -115,7 +115,6 @@ withVnav state { navbar } tagger pageContent =
                 |> Btn.onClick (tagger <| LogOut state)
                 |> Btn.toHtml
             ]
-
 
         navContent =
             div [ class "font-bold flex flex-col items-center h-full" ]
