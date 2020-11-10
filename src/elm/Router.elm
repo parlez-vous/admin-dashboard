@@ -14,9 +14,7 @@ import Html.Attributes exposing (class)
 import RemoteData exposing (WebData)
 import Routes.Dash as Dash
 import Routes.Home as Home
-import Routes.Login as Login
 import Routes.RegisterSite as RegisterSite
-import Routes.Signup as Signup
 import Routes.Site as Site
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 import UI.Toast as Toast
@@ -28,8 +26,6 @@ type Route
     = Home Home.Model
     | Dash Dash.Model
     | Site Site.Model
-    | Login Login.Model
-    | Signup Signup.Model
     | RegisterSite RegisterSite.Model
     | NotFound
 
@@ -47,8 +43,6 @@ type Msg
     | HomeMsg Home.Msg
     | DashMsg Dash.Msg
     | SiteMsg Site.Msg
-    | LoginMsg Login.Msg
-    | SignupMsg Signup.Msg
     | RegisterSiteMsg RegisterSite.Msg
 
 
@@ -58,8 +52,9 @@ parser =
         [ Parser.map (Home Home.initModel) Parser.top
         , Parser.map (Dash Dash.initModel) (Parser.s "dash")
         , Parser.map (Site << Site.initModel) (Parser.s "sites" </> string)
-        , Parser.map (Login Login.initModel) (Parser.s "login")
-        , Parser.map (Signup Signup.initModel) (Parser.s "signup")
+
+        --, Parser.map (Login Login.initModel) (Parser.s "login")
+        --, Parser.map (Signup Signup.initModel) (Parser.s "signup")
         , Parser.map (RegisterSite RegisterSite.initModel) (Parser.s "register-site")
         ]
 
@@ -80,11 +75,9 @@ init url sharedState =
     )
 
 
-
--- trigger commands on page transitions
--- and initializations
-
-
+{-| trigger commands on page transitions
+and initializations
+-}
 transitionTrigger : Route -> SharedState -> Cmd Msg
 transitionTrigger route state =
     case ( route, state ) of
@@ -99,10 +92,7 @@ transitionTrigger route state =
             Nav.pushUrl navKey "/"
 
         -- redirect authed users away from public routes
-        ( Login _, Private { navKey } ) ->
-            Nav.pushUrl navKey "/dash"
-
-        ( Signup _, Private { navKey } ) ->
+        ( Home _, Private { navKey } ) ->
             Nav.pushUrl navKey "/dash"
 
         ( _, Private { admin, api, sites } ) ->
@@ -206,26 +196,6 @@ update state msg model =
                     , SharedState.NoUpdate
                     )
 
-        ( LoginMsg loginMsg, Login loginModel ) ->
-            let
-                ( newLoginModel, loginCmd, sharedStateUpdate ) =
-                    Login.update state loginMsg loginModel
-            in
-            ( { model | activeRoute = Login newLoginModel }
-            , Cmd.map LoginMsg loginCmd
-            , sharedStateUpdate
-            )
-
-        ( SignupMsg signupMsg, Signup signupModel ) ->
-            let
-                ( newSignupModel, signupCmd, sharedStateUpdate ) =
-                    Signup.update state signupMsg signupModel
-            in
-            ( { model | activeRoute = Signup newSignupModel }
-            , Cmd.map SignupMsg signupCmd
-            , sharedStateUpdate
-            )
-
         ( RegisterSiteMsg registerSiteMsg, RegisterSite registersiteModel ) ->
             case state of
                 Private privateState ->
@@ -297,24 +267,6 @@ view sharedState model =
                         Private privateState ->
                             Site.view privateState siteModel
                                 |> Tuple.mapSecond (Html.map SiteMsg)
-
-                Login loginModel ->
-                    case sharedState of
-                        Private _ ->
-                            redirectPage
-
-                        Public publicState ->
-                            Login.view publicState loginModel
-                                |> Tuple.mapSecond (Html.map LoginMsg)
-
-                Signup signupModel ->
-                    case sharedState of
-                        Private _ ->
-                            redirectPage
-
-                        Public publicState ->
-                            Signup.view publicState signupModel
-                                |> Tuple.mapSecond (Html.map SignupMsg)
 
                 RegisterSite registerSiteModel ->
                     case sharedState of

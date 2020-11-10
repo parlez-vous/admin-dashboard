@@ -6,10 +6,15 @@ module Routes.Home exposing
     , view
     )
 
+import Ant.Button as Btn
+import Ant.Form.View as FV
+import Ant.Layout as Layout
+import Ant.Typography as T
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import Routes.Home.Forms as Forms exposing (..)
 import SharedState exposing (SharedState(..), SharedStateUpdate)
 import UI.Link as Link
 import UI.Nav exposing (withHnav)
@@ -21,52 +26,106 @@ import Utils exposing (getNavKey, logout)
 
 
 type Msg
-    = GoToDashboard
-    | LogOut
+    = LogInFormChanged LogInFormModel
+    | SignUpFormChanged SignUpFormModel
+    | ActiveFormToggled
+    | LogIn String String
+    | SignUp String String String String
+    | FormSubmitted FormSubmittedResult
+
+
+type ActiveForm
+    = LogInActive
+    | SignUpActive
 
 
 type alias Model =
-    ()
+    { logInForm : LogInFormModel
+    , signUpForm : SignUpFormModel
+    , activeForm : ActiveForm
+    }
 
 
 initModel : Model
 initModel =
-    ()
+    { logInForm = initialLogInFormModel
+    , signUpForm = initialSignUpFormModel
+    , activeForm = SignUpActive
+    }
 
 
 
 -- UPDATE
 
 
+{-| Does no-ops for Cmd and ShareStateUpdate
+-}
+simpleUpdate : Model -> ( Model, Cmd Msg, SharedStateUpdate )
+simpleUpdate newModel =
+    ( newModel, Cmd.none, SharedState.NoUpdate )
+
+
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update sharedState msg model =
     case msg of
-        GoToDashboard ->
+        LogInFormChanged newFormState ->
+            simpleUpdate { model | logInForm = newFormState }
+
+        SignUpFormChanged newFormState ->
+            simpleUpdate { model | signUpForm = newFormState }
+
+        ActiveFormToggled ->
             let
-                navKey =
-                    getNavKey sharedState
+                newActiveForm =
+                    case model.activeForm of
+                        LogInActive ->
+                            SignUpActive
+
+                        SignUpActive ->
+                            LogInActive
             in
-            ( model
-            , Nav.pushUrl navKey "/dash"
+            simpleUpdate { model | activeForm = newActiveForm }
+
+        LogIn username password ->
+            let
+                ( newFormModel, cmd ) =
+                    Forms.handleSubmitLogin
+                        sharedState
+                        FormSubmitted
+                        model.logInForm
+                        { username = username
+                        , password = password
+                        }
+            in
+            ( { model | logInForm = newFormModel }
+            , cmd
             , SharedState.NoUpdate
             )
 
-        LogOut ->
+        SignUp username email password passwordConfirm ->
+            let
+                ( newFormModel, cmd ) =
+                    Forms.handleSubmitSignup
+                        sharedState
+                        FormSubmitted
+                        model.signUpForm
+                        { username = username
+                        , password = password
+                        , email = email
+                        , passwordConfirm = passwordConfirm
+                        }
+            in
+            ( { model | signUpForm = newFormModel }
+            , cmd
+            , SharedState.NoUpdate
+            )
+
+        FormSubmitted submissionResult ->
             let
                 ( cmd, sharedStateUpdate ) =
-                    case sharedState of
-                        -- logging out from an unauthenticated state
-                        -- does not make sense
-                        Public _ ->
-                            ( Cmd.none, SharedState.NoUpdate )
-
-                        Private privateState ->
-                            logout privateState
+                    Forms.handleFormSubmitted submissionResult sharedState
             in
-            ( model
-            , cmd
-            , sharedStateUpdate
-            )
+            ( model, cmd, sharedStateUpdate )
 
 
 
@@ -78,23 +137,78 @@ type alias Title =
 
 
 view : SharedState -> Model -> ( Title, Html Msg )
-view sharedState model =
+view _ model =
     let
-        a =
-            Debug.log "Shared State: "
-                (case sharedState of
-                    Private _ ->
-                        "private"
+        logInForm =
+            FV.toHtml
+                { onChange = LogInFormChanged
+                , action = "Log In"
+                , loading = "loading ..."
+                , validation = FV.ValidateOnSubmit
+                }
+                (Forms.logInForm LogIn)
+                model.logInForm
 
-                    Public _ ->
-                        "public"
-                )
+        signUpForm =
+            FV.toHtml
+                { onChange = SignUpFormChanged
+                , action = "Sign Up"
+                , loading = "loading ..."
+                , validation = FV.ValidateOnSubmit
+                }
+                (Forms.signUpForm SignUp)
+                model.signUpForm
 
-        html =
+        activeForm =
+            case model.activeForm of
+                SignUpActive ->
+                    signUpForm
+
+                LogInActive ->
+                    logInForm
+
+        headerContent =
+            div [] [ text "logo placeholder" ]
+
+        toggleActiveFormButton =
+            let
+                buttonLabel =
+                    case model.activeForm of
+                        SignUpActive ->
+                            "or log in"
+
+                        LogInActive ->
+                            "or sign up"
+            in
+            Btn.button buttonLabel
+                |> Btn.onClick ActiveFormToggled
+                |> Btn.withType Btn.Link
+                |> Btn.toHtml
+
+        heading =
+            let
+                headingContent =
+                    case model.activeForm of
+                        SignUpActive ->
+                            "Sign Up To ParlezVous"
+
+                        LogInActive ->
+                            "Log In To ParlezVous"
+            in
+            T.title headingContent
+                |> T.level T.H2
+                |> T.toHtml
+
+        mainContent =
             div []
-                [ h1 [ class "center-text slogan" ] [ text "Enable Conversations" ]
-                , pre [ class "center-text" ] [ text "work in progress" ]
-                , p [ class "center-text" ] [ text "The fastest way to engage your audience" ]
+                [ heading
+                , activeForm
+                , toggleActiveFormButton
                 ]
+
+        layoutContent =
+            Layout.layout2
+                (Layout.header headerContent)
+                (Layout.content mainContent)
     in
-    ( "Home", html )
+    ( "Home", Layout.toHtml layoutContent )
