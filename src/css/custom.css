@@ -1,14 +1,11 @@
 @tailwind base;
 @tailwind components;
-
-.site-summary {
-	@apply absolute bg-gray-100 w-40 shadow;
-	bottom: .5rem;
-	left: 10rem;
-}
-
 @tailwind utilities;
 
+
+/* Custom CSS Below
+ *
+ */
 
 html, body {
 	height: 100%;
@@ -37,3 +34,4 @@ html > *, body > * {
 	height: 30px;
 	animation: donut-spin 1.2s linear infinite;
 }
+
