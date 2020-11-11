@@ -16,7 +16,7 @@ module Routes.Home.Forms exposing
 import Ant.Form as Form exposing (Form)
 import Ant.Form.PasswordField exposing (PasswordFieldValue)
 import Ant.Form.View as FV
-import Api
+import Api exposing (Api)
 import Api.Deserialize exposing (AdminWithToken)
 import Browser.Navigation as Nav
 import Email
@@ -25,16 +25,6 @@ import SharedState exposing (SharedState, SharedStateUpdate)
 import Utils
 
 
-{-| Refactoring ideas
-type alias ApiClient =
-{ adminSignIn
-, adminSignup
-, getSites
-}
-
-createApi : SharedState -> ApiClient
-
--}
 type alias FormSubmittedResult =
     Result Http.Error AdminWithToken
 
@@ -64,18 +54,18 @@ type alias LogInFormValues =
 {-| Initiates API request to server
 -}
 handleSubmitLogin :
-    SharedState
+    Api
     -> (FormSubmittedResult -> msg)
     -> LogInFormModel
     -> { username : String, password : String } --> 'a' ???
     -> ( LogInFormModel, Cmd msg )
-handleSubmitLogin state tagger formModel data =
+handleSubmitLogin api tagger formModel data =
     let
-        api =
-            Utils.getApi state
+        { adminLogIn } =
+            Api.getApiClient api
 
         cmd =
-            Api.adminSignin api tagger data
+            adminLogIn tagger data
     in
     ( { formModel | state = FV.Loading }
     , cmd
@@ -83,18 +73,18 @@ handleSubmitLogin state tagger formModel data =
 
 
 handleSubmitSignup :
-    SharedState
+    Api
     -> (FormSubmittedResult -> msg)
     -> SignUpFormModel
     -> { email : String, username : String, password : String, passwordConfirm : String }
     -> ( SignUpFormModel, Cmd msg )
-handleSubmitSignup state tagger formModel data =
+handleSubmitSignup api tagger formModel data =
     let
-        api =
-            Utils.getApi state
+        { adminSignUp } =
+            Api.getApiClient api
 
         cmd =
-            Api.adminSignup api tagger data
+            adminSignUp tagger data
     in
     ( { formModel | state = FV.Loading }
     , cmd

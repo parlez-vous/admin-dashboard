@@ -15,6 +15,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Routes.Home.Forms as Forms exposing (..)
 import SharedState exposing (SharedState(..), SharedStateUpdate)
+import Utils
 
 
 
@@ -84,9 +85,12 @@ update sharedState msg model =
 
         LogIn username password ->
             let
+                api =
+                    Utils.getApi sharedState
+
                 ( newFormModel, cmd ) =
                     Forms.handleSubmitLogin
-                        sharedState
+                        api
                         FormSubmitted
                         model.logInForm
                         { username = username
@@ -100,9 +104,12 @@ update sharedState msg model =
 
         SignUp username email password passwordConfirm ->
             let
+                api =
+                    Utils.getApi sharedState
+
                 ( newFormModel, cmd ) =
                     Forms.handleSubmitSignup
-                        sharedState
+                        api
                         FormSubmitted
                         model.signUpForm
                         { username = username

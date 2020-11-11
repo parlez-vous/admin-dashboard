@@ -113,9 +113,12 @@ update state msg model =
 
                 ( _, token ) =
                     state.admin
+
+                { registerSite } =
+                    Api.getApiClient state.api
             in
             ( model
-            , Api.registerSite token state.api FormSubmitted data
+            , registerSite token FormSubmitted data
             , NoUpdate
             )
 

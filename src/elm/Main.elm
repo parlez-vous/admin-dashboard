@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Ant.Css
-import Api
+import Api exposing (Api)
 import Api.Deserialize as Input
 import Browser
 import Browser.Navigation as Nav
@@ -15,7 +15,7 @@ import Url
 
 type alias NotReadyData =
     { navKey : Nav.Key
-    , api : String
+    , api : Api
     }
 
 
@@ -25,9 +25,39 @@ type alias AppData =
     }
 
 
+type FailureCode
+    = E_101
+
+
+
+-- | E_102
+-- | E_103
+-- | etc ...
+
+
+type alias FailureCodes =
+    { flagApiIsInvalidUrl : FailureCode
+    }
+
+
+failureCodes : FailureCodes
+failureCodes =
+    { flagApiIsInvalidUrl = E_101
+    }
+
+
+failureCodeToString : FailureCode -> String
+failureCodeToString _ =
+    "e-101"
+
+
 type Model
     = Ready AppData
+      -- represents a pending state for the application
+      -- such as when we're checking with the server if a session token is valid
     | NotReady NotReadyData
+      -- initialization failed
+    | FailedInit FailureCode Nav.Key
 
 
 type Msg
@@ -62,33 +92,39 @@ type alias Flags =
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
-        ( model, cmd ) =
-            case flags.token of
-                Just t ->
-                    ( NotReady (NotReadyData key flags.api)
-                    , Api.getAdminSession t flags.api <| SessionVerified t url
-                    )
-
-                Nothing ->
-                    let
-                        sharedState =
-                            Public <| SharedState.init key flags.api
-
-                        ( routerModel, routerCmd ) =
-                            Router.init url sharedState
-
-                        appData =
-                            { state = sharedState
-                            , router = routerModel
-                            }
-                    in
-                    ( Ready appData
-                    , Cmd.map RouterMsg routerCmd
-                    )
+        maybeApiUrl =
+            Url.fromString flags.api
     in
-    ( model
-    , cmd
-    )
+    case ( maybeApiUrl, flags.token ) of
+        -- The incoming Url from flags must be a valid URL, otherwise we can't make any API Requests
+        ( Nothing, _ ) ->
+            ( FailedInit failureCodes.flagApiIsInvalidUrl key, Cmd.none )
+
+        ( Just apiUrl, Just token ) ->
+            let
+                { getAdminSession } =
+                    Api.getApiClient (Api.apiFactory apiUrl)
+            in
+            ( NotReady <| NotReadyData key (Api.apiFactory apiUrl)
+            , getAdminSession token <| SessionVerified token url
+            )
+
+        ( Just apiUrl, Nothing ) ->
+            let
+                sharedState =
+                    Public <| SharedState.init key apiUrl
+
+                ( routerModel, routerCmd ) =
+                    Router.init url sharedState
+
+                appData =
+                    { state = sharedState
+                    , router = routerModel
+                    }
+            in
+            ( Ready appData
+            , Cmd.map RouterMsg routerCmd
+            )
 
 
 
@@ -109,20 +145,8 @@ getNavKey model =
         NotReady { navKey } ->
             navKey
 
-
-getApi : Model -> String
-getApi model =
-    case model of
-        Ready { state } ->
-            case state of
-                Public { api } ->
-                    api
-
-                Private { api } ->
-                    api
-
-        NotReady { api } ->
-            api
+        FailedInit _ navKey ->
+            navKey
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -154,7 +178,7 @@ update msg model =
         SessionVerified token url result ->
             let
                 publicState =
-                    SharedState.init key api
+                    SharedState.init key url
 
                 sharedState =
                     case result of
@@ -167,9 +191,6 @@ update msg model =
 
                 key =
                     getNavKey model
-
-                api =
-                    getApi model
 
                 ( routerModel, routerCmd ) =
                     Router.init url sharedState
@@ -185,9 +206,6 @@ update msg model =
 updateRouter : Router.Msg -> Model -> ( Model, Cmd Msg )
 updateRouter routerMsg model =
     case model of
-        NotReady _ ->
-            ( model, Cmd.none )
-
         Ready appData ->
             let
                 ( nextRouterModel, routerCmd, sharedStateUpdate ) =
@@ -203,6 +221,9 @@ updateRouter routerMsg model =
                 }
             , Cmd.map RouterMsg routerCmd
             )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 
@@ -224,4 +245,15 @@ view model =
         NotReady _ ->
             { title = "Loading ..."
             , body = [ div [] [ text "Loading ..." ] ]
+            }
+
+        FailedInit failureCode _ ->
+            { title = "woops!"
+            , body =
+                [ div []
+                    [ text "Something went wrong :("
+                    , br [] []
+                    , text <| "Error code: " ++ failureCodeToString failureCode
+                    ]
+                ]
             }

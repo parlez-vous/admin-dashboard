@@ -1,10 +1,8 @@
 module Api exposing
-    ( adminSignin
-    , adminSignup
-    , getAdminSession
-    , getSingleSite
-    , getSites
-    , registerSite
+    ( Api
+    , ApiClient
+    , apiFactory
+    , getApiClient
     )
 
 import Api.Deserialize as Input
@@ -13,6 +11,22 @@ import Http
 import Json.Decode as D
 import Json.Encode as E
 import RemoteData
+import Url exposing (Url)
+import Url.Builder
+
+
+type Api
+    = Api Url
+
+
+type alias ApiClient msg =
+    { adminSignUp : AdminSignUp msg
+    , adminLogIn : AdminLogIn msg
+    , getAdminSession : GetAdminSession msg
+    , getManySites : GetManySites msg
+    , getSite : GetSite msg
+    , registerSite : RegisterSite msg
+    }
 
 
 type alias ToMsg a msg =
@@ -32,9 +46,51 @@ type Method
     | Post
 
 
-adminPath : String
-adminPath =
-    "/admins"
+apiFactory : Url -> Api
+apiFactory =
+    Api
+
+
+getApiClient : Api -> ApiClient msg
+getApiClient api =
+    { adminLogIn = adminSignin api
+    , adminSignUp = adminSignup api
+    , getAdminSession = getAdminSession api
+    , getManySites = getSites api
+    , getSite = getSingleSite api
+    , registerSite = registerSite api
+    }
+
+
+urlToString : Url -> String
+urlToString url =
+    let
+        raw =
+            Url.toString url
+    in
+    if String.endsWith "/" raw then
+        String.dropRight 1 raw
+
+    else
+        raw
+
+
+makeRequestUrl : Api -> String -> String
+makeRequestUrl (Api url) routePath =
+    let
+        adminPathRoot =
+            "admins"
+
+        routePathList =
+            String.split "/" routePath
+
+        pathComponents =
+            adminPathRoot :: routePathList
+    in
+    Url.Builder.crossOrigin
+        (urlToString url)
+        pathComponents
+        []
 
 
 secureRequestFactory : Method -> Input.SessionToken -> RequestTemplate
@@ -98,7 +154,15 @@ secureGet endpoint token expect =
         }
 
 
-adminSignup : String -> ToMsg Input.AdminWithToken msg -> Output.Signup a -> Cmd msg
+
+-- Api Requests
+
+
+type alias AdminSignUp msg =
+    ToMsg Input.AdminWithToken msg -> Output.Signup -> Cmd msg
+
+
+adminSignup : Api -> AdminSignUp msg
 adminSignup api toMsg data =
     let
         signupJson =
@@ -118,11 +182,15 @@ adminSignup api toMsg data =
     Http.post
         { body = body
         , expect = expect
-        , url = api ++ adminPath ++ "/signup"
+        , url = makeRequestUrl api "signup"
         }
 
 
-adminSignin : String -> ToMsg Input.AdminWithToken msg -> Output.Signin a -> Cmd msg
+type alias AdminLogIn msg =
+    ToMsg Input.AdminWithToken msg -> Output.Signin -> Cmd msg
+
+
+adminSignin : Api -> AdminLogIn msg
 adminSignin api toMsg data =
     let
         signinJson =
@@ -140,7 +208,7 @@ adminSignin api toMsg data =
     Http.post
         { body = body
         , expect = expect
-        , url = api ++ adminPath ++ "/signin"
+        , url = makeRequestUrl api "signin"
         }
 
 
@@ -148,24 +216,28 @@ adminSignin api toMsg data =
 -- Private Routes
 
 
-getAdminSession : Input.SessionToken -> String -> ToMsg Input.Admin msg -> Cmd msg
-getAdminSession token api toMsg =
+type alias GetAdminSession msg =
+    Input.SessionToken -> ToMsg Input.Admin msg -> Cmd msg
+
+
+getAdminSession : Api -> GetAdminSession msg
+getAdminSession api token toMsg =
     let
         expect =
             Http.expectJson toMsg (D.field "data" Input.adminDecoder)
     in
     secureGet
-        (api ++ adminPath ++ "/profile")
+        (makeRequestUrl api "profile")
         token
         expect
 
 
-getSites :
-    Input.SessionToken
-    -> String
-    -> (RemoteData.WebData Input.Sites -> msg)
-    -> Cmd msg
-getSites token api toMsg =
+type alias GetManySites msg =
+    Input.SessionToken -> (RemoteData.WebData Input.Sites -> msg) -> Cmd msg
+
+
+getSites : Api -> GetManySites msg
+getSites api token toMsg =
     let
         sitesDecoder =
             D.field "data" (D.list Input.siteDecoder)
@@ -174,18 +246,17 @@ getSites token api toMsg =
             Http.expectJson (RemoteData.fromResult >> toMsg) sitesDecoder
     in
     secureGet
-        (api ++ adminPath ++ "/sites")
+        (makeRequestUrl api "sites")
         token
         expect
 
 
-getSingleSite :
-    Input.SessionToken
-    -> String
-    -> String
-    -> (RemoteData.WebData Input.Site -> msg)
-    -> Cmd msg
-getSingleSite token api siteId toMsg =
+type alias GetSite msg =
+    Input.SessionToken -> String -> (RemoteData.WebData Input.Site -> msg) -> Cmd msg
+
+
+getSingleSite : Api -> GetSite msg
+getSingleSite api token siteId toMsg =
     let
         siteDecoder =
             D.field "data" Input.siteDecoder
@@ -194,18 +265,17 @@ getSingleSite token api siteId toMsg =
             Http.expectJson (RemoteData.fromResult >> toMsg) siteDecoder
     in
     secureGet
-        (api ++ adminPath ++ "/sites/" ++ siteId)
+        (makeRequestUrl api "sites/" ++ siteId)
         token
         expect
 
 
-registerSite :
-    Input.SessionToken
-    -> String
-    -> ToMsg Input.Site msg
-    -> Output.RegisterSite
-    -> Cmd msg
-registerSite token api toMsg data =
+type alias RegisterSite msg =
+    Input.SessionToken -> ToMsg Input.Site msg -> Output.RegisterSite -> Cmd msg
+
+
+registerSite : Api -> RegisterSite msg
+registerSite api token toMsg data =
     let
         siteJson =
             E.object
@@ -221,7 +291,7 @@ registerSite token api toMsg data =
                 (D.field "data" Input.siteDecoder)
     in
     securePost
-        (api ++ adminPath ++ "/sites/register")
+        (makeRequestUrl api "sites/register")
         token
         body
         expect

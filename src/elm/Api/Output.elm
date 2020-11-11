@@ -11,19 +11,17 @@ module Api.Output exposing
     )
 
 
-type alias Signup a =
-    { a
-        | username : String
-        , email : String
-        , password : String
-        , passwordConfirm : String
+type alias Signup =
+    { username : String
+    , email : String
+    , password : String
+    , passwordConfirm : String
     }
 
 
-type alias Signin a =
-    { a
-        | username : String
-        , password : String
+type alias Signin =
+    { username : String
+    , password : String
     }
 
 

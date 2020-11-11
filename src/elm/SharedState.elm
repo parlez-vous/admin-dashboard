@@ -11,10 +11,12 @@ module SharedState exposing
     , update
     )
 
+import Api exposing (Api)
 import Api.Deserialize as Input
 import Browser.Navigation
 import Dict exposing (Dict)
 import RemoteData exposing (WebData)
+import Url exposing (Url)
 
 
 type alias UUID =
@@ -51,18 +53,22 @@ type SharedStateUpdate
     | LogOut PublicState
 
 
-type alias PublicState =
-    { navKey : Browser.Navigation.Key
-    , api : String
+type alias BaseState a =
+    { a
+        | navKey : Browser.Navigation.Key
+        , api : Api
     }
+
+
+type alias PublicState =
+    BaseState {}
 
 
 type alias PrivateState =
-    { navKey : Browser.Navigation.Key
-    , api : String
-    , admin : Input.AdminWithToken
-    , sites : WebData SiteDict
-    }
+    BaseState
+        { admin : Input.AdminWithToken
+        , sites : WebData SiteDict
+        }
 
 
 type SharedState
@@ -79,10 +85,10 @@ toPrivate admin publicState =
     }
 
 
-init : Browser.Navigation.Key -> String -> PublicState
+init : Browser.Navigation.Key -> Url -> PublicState
 init key api =
     { navKey = key
-    , api = api
+    , api = Api.apiFactory api
     }
 
 

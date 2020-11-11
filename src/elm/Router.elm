@@ -99,10 +99,13 @@ transitionTrigger route state =
             let
                 ( _, token ) =
                     admin
+
+                { getManySites } =
+                    Api.getApiClient api
             in
             case sites of
                 RemoteData.NotAsked ->
-                    Api.getSites token api SitesResponse
+                    getManySites token SitesResponse
 
                 _ ->
                     Cmd.none

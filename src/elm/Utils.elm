@@ -6,6 +6,7 @@ port module Utils exposing
     , toClass
     )
 
+import Api exposing (Api)
 import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes exposing (class)
@@ -22,7 +23,7 @@ port setToken : String -> Cmd msg
 -- TODO: turn into extensible record
 
 
-getApi : SharedState -> String
+getApi : SharedState -> Api
 getApi sharedState =
     case sharedState of
         Public { api } ->
