@@ -63,7 +63,7 @@ type Model
 type Msg
     = UrlChanged Url.Url
     | LinkClicked Browser.UrlRequest
-    | SessionVerified Input.SessionToken Url.Url (Result Http.Error Input.Admin)
+    | SessionVerified Input.SessionToken Url.Url Api (Result Http.Error Input.Admin)
     | RouterMsg Router.Msg
 
 
@@ -90,7 +90,7 @@ type alias Flags =
 
 
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init flags url key =
+init flags browserUrl key =
     let
         maybeApiUrl =
             Url.fromString flags.api
@@ -102,20 +102,26 @@ init flags url key =
 
         ( Just apiUrl, Just token ) ->
             let
+                api =
+                    Api.apiFactory apiUrl
+
                 { getAdminSession } =
-                    Api.getApiClient (Api.apiFactory apiUrl)
+                    Api.getApiClient api
             in
-            ( NotReady <| NotReadyData key (Api.apiFactory apiUrl)
-            , getAdminSession token <| SessionVerified token url
+            ( NotReady <| NotReadyData key api
+            , getAdminSession token <| SessionVerified token browserUrl api
             )
 
         ( Just apiUrl, Nothing ) ->
             let
+                api =
+                    Api.apiFactory apiUrl
+
                 sharedState =
-                    Public <| SharedState.init key apiUrl
+                    Public <| SharedState.init key api
 
                 ( routerModel, routerCmd ) =
-                    Router.init url sharedState
+                    Router.init browserUrl sharedState
 
                 appData =
                     { state = sharedState
@@ -175,10 +181,10 @@ update msg model =
                     , Nav.load urlStr
                     )
 
-        SessionVerified token url result ->
+        SessionVerified token browserUrl api result ->
             let
                 publicState =
-                    SharedState.init key url
+                    SharedState.init key api
 
                 sharedState =
                     case result of
@@ -193,7 +199,7 @@ update msg model =
                     getNavKey model
 
                 ( routerModel, routerCmd ) =
-                    Router.init url sharedState
+                    Router.init browserUrl sharedState
             in
             ( Ready
                 { state = sharedState

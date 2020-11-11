@@ -85,10 +85,10 @@ toPrivate admin publicState =
     }
 
 
-init : Browser.Navigation.Key -> Url -> PublicState
+init : Browser.Navigation.Key -> Api -> PublicState
 init key api =
     { navKey = key
-    , api = Api.apiFactory api
+    , api = api
     }
 
 

@@ -16,7 +16,7 @@ import Routes.Dash as Dash
 import Routes.Home as Home
 import Routes.RegisterSite as RegisterSite
 import Routes.Site as Site
-import SharedState exposing (SharedState(..), SharedStateUpdate)
+import SharedState exposing (PrivateState, SharedState(..), SharedStateUpdate)
 import UI.Toast as Toast
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser, oneOf, string)
@@ -131,10 +131,6 @@ update state msg model =
             )
 
         ( SitesResponse response, _ ) ->
-            let
-                _ =
-                    Debug.log "SitesResponse" response
-            in
             case response of
                 RemoteData.Success sites ->
                     ( model
@@ -230,22 +226,46 @@ update state msg model =
 --}
 
 
+type alias Title =
+    String
+
+
 type alias AppView =
-    { title : String
+    { title : Title
     , body : Html Msg
     }
 
 
-view : SharedState -> Model -> AppView
-view sharedState model =
+viewPrivatePage :
+    SharedState
+    -> (PrivateState -> m -> ( Title, Html msg ))
+    -> m
+    -> (msg -> Msg)
+    -> ( Title, Html Msg )
+viewPrivatePage sharedState routeView model tagger =
     let
         redirectPage =
             ( "Redirecting ..."
             , div [] [ text "Redirecting ..." ]
             )
+    in
+    case sharedState of
+        Public _ ->
+            redirectPage
 
+        Private privateState ->
+            routeView privateState model
+                |> Tuple.mapSecond (Html.map tagger)
+
+
+view : SharedState -> Model -> AppView
+view sharedState model =
+    let
         toastView =
             Toast.view ToastMsg model.toasts
+
+        viewPrivateRoute =
+            viewPrivatePage sharedState
 
         ( title, html ) =
             case model.activeRoute of
@@ -254,31 +274,22 @@ view sharedState model =
                         |> Tuple.mapSecond (Html.map HomeMsg)
 
                 Dash dashModel ->
-                    case sharedState of
-                        Public _ ->
-                            redirectPage
-
-                        Private privateState ->
-                            Dash.view privateState dashModel
-                                |> Tuple.mapSecond (Html.map DashMsg)
+                    viewPrivateRoute
+                        Dash.view
+                        dashModel
+                        DashMsg
 
                 Site siteModel ->
-                    case sharedState of
-                        Public _ ->
-                            redirectPage
-
-                        Private privateState ->
-                            Site.view privateState siteModel
-                                |> Tuple.mapSecond (Html.map SiteMsg)
+                    viewPrivateRoute
+                        Site.view
+                        siteModel
+                        SiteMsg
 
                 RegisterSite registerSiteModel ->
-                    case sharedState of
-                        Public _ ->
-                            redirectPage
-
-                        Private privateState ->
-                            RegisterSite.view privateState registerSiteModel
-                                |> Tuple.mapSecond (Html.map RegisterSiteMsg)
+                    viewPrivateRoute
+                        RegisterSite.view
+                        registerSiteModel
+                        RegisterSiteMsg
 
                 NotFound ->
                     ( "Woops!", div [] [ text "404 Not Found" ] )
