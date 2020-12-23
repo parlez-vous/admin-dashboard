@@ -18,7 +18,7 @@
             "pablen/toasty": "1.2.0",
             "panthershark/email-parser": "1.0.2",
             "rtfeldman/elm-iso8601-date-strings": "1.1.3",
-            "supermacro/elm-antd": "6.1.0"
+            "supermacro/elm-antd": "7.0.1"
         },
         "indirect": {
             "avh4/elm-color": "1.0.0",
