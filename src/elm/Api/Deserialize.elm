@@ -33,17 +33,14 @@ type alias Admin =
 type alias Site =
     { id : String
     , hostname : String
-    , verified : Bool
 
     -- UUID value
     -- choosing not to type as UUID using something like
     -- NoRedInk/elm-uui because we will not be manipulating
     -- this value.
     -- It will only be rendered to the user
-    , dnsTag : String
     , created : Time.Posix
     , updated : Time.Posix
-    , expiresBy : Time.Posix
     }
 
 
@@ -73,11 +70,8 @@ adminAndTokenDecoder =
 
 siteDecoder : Decoder Site
 siteDecoder =
-    D.map7 Site
+    D.map4 Site
         (D.field "id" D.string)
         (D.field "hostname" D.string)
-        (D.field "verified" D.bool)
-        (D.field "dns_tag" D.string)
         (D.field "created_at" Iso8601.decoder)
         (D.field "updated_at" Iso8601.decoder)
-        (D.field "expires_by" Iso8601.decoder)

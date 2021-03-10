@@ -4,7 +4,6 @@ module SharedState exposing
     , SharedState(..)
     , SharedStateUpdate(..)
     , SiteDict
-    , allVerified
     , init
     , toDict
     , toPrivate
@@ -16,7 +15,6 @@ import Api.Deserialize as Input
 import Browser.Navigation
 import Dict exposing (Dict)
 import RemoteData exposing (WebData)
-import Url exposing (Url)
 
 
 type alias UUID =
@@ -25,19 +23,6 @@ type alias UUID =
 
 type alias SiteDict =
     Dict UUID Input.Site
-
-
-allVerified : SiteDict -> Bool
-allVerified =
-    let
-        isVerified _ site allVerified_ =
-            if not allVerified_ then
-                allVerified_
-
-            else
-                site.verified
-    in
-    Dict.foldr isVerified False
 
 
 toDict : Input.Sites -> SiteDict
