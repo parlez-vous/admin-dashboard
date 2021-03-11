@@ -12,7 +12,7 @@
   "license": "UNLICENSED",
   "dependencies": {},
   "devDependencies": {
-    "autoprefixer": "9.7.4",
+    "autoprefixer": "10.2.5",
     "css-loader": "2.1.0",
     "elm": "^0.19.1-5",
     "elm-format": "^0.8.5",
