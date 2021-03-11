@@ -33,12 +33,6 @@ type alias Admin =
 type alias Site =
     { id : String
     , hostname : String
-
-    -- UUID value
-    -- choosing not to type as UUID using something like
-    -- NoRedInk/elm-uui because we will not be manipulating
-    -- this value.
-    -- It will only be rendered to the user
     , created : Time.Posix
     , updated : Time.Posix
     }
