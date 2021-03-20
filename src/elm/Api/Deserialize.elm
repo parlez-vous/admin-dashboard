@@ -51,8 +51,8 @@ adminDecoder =
     D.map4 Admin
         (D.field "id" D.string)
         (D.field "username" D.string)
-        (D.field "created_at" Iso8601.decoder)
-        (D.field "updated_at" Iso8601.decoder)
+        (D.field "createdAt" Iso8601.decoder)
+        (D.field "updatedAt" Iso8601.decoder)
 
 
 adminAndTokenDecoder : Decoder ( Admin, SessionToken )
@@ -67,5 +67,5 @@ siteDecoder =
     D.map4 Site
         (D.field "id" D.string)
         (D.field "hostname" D.string)
-        (D.field "created_at" Iso8601.decoder)
-        (D.field "updated_at" Iso8601.decoder)
+        (D.field "createdAt" Iso8601.decoder)
+        (D.field "updatedAt" Iso8601.decoder)

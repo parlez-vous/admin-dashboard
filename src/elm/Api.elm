@@ -3,6 +3,7 @@ module Api exposing
     , ApiClient
     , apiFactory
     , getApiClient
+    , makeCommonRequestUrl
     )
 
 import Api.Deserialize as Input
@@ -75,8 +76,26 @@ urlToString url =
         raw
 
 
-makeRequestUrl : Api -> String -> String
-makeRequestUrl (Api url) routePath =
+makeCommonRequestUrl : Api -> String -> String
+makeCommonRequestUrl (Api url) routePath =
+    let
+        commonPathRoot =
+            "common"
+
+        routePathList =
+            String.split "/" routePath
+
+        pathComponents =
+            commonPathRoot :: routePathList
+    in
+    Url.Builder.crossOrigin
+        (urlToString url)
+        pathComponents
+        []
+
+
+makeAdminRequestUrl : Api -> String -> String
+makeAdminRequestUrl (Api url) routePath =
     let
         adminPathRoot =
             "admins"
@@ -182,7 +201,7 @@ adminSignup api toMsg data =
     Http.post
         { body = body
         , expect = expect
-        , url = makeRequestUrl api "signup"
+        , url = makeCommonRequestUrl api "signup"
         }
 
 
@@ -195,7 +214,7 @@ adminSignin api toMsg data =
     let
         signinJson =
             E.object
-                [ ( "username", E.string data.username )
+                [ ( "usernameOrEmail", E.string data.username )
                 , ( "password", E.string data.password )
                 ]
 
@@ -208,7 +227,7 @@ adminSignin api toMsg data =
     Http.post
         { body = body
         , expect = expect
-        , url = makeRequestUrl api "signin"
+        , url = makeCommonRequestUrl api "signin"
         }
 
 
@@ -227,7 +246,7 @@ getAdminSession api token toMsg =
             Http.expectJson toMsg (D.field "data" Input.adminDecoder)
     in
     secureGet
-        (makeRequestUrl api "profile")
+        (makeCommonRequestUrl api "profile")
         token
         expect
 
@@ -246,7 +265,7 @@ getSites api token toMsg =
             Http.expectJson (RemoteData.fromResult >> toMsg) sitesDecoder
     in
     secureGet
-        (makeRequestUrl api "sites")
+        (makeAdminRequestUrl api "sites")
         token
         expect
 
@@ -265,7 +284,7 @@ getSingleSite api token siteId toMsg =
             Http.expectJson (RemoteData.fromResult >> toMsg) siteDecoder
     in
     secureGet
-        (makeRequestUrl api "sites/" ++ siteId)
+        (makeAdminRequestUrl api "sites/" ++ siteId)
         token
         expect
 
@@ -291,7 +310,7 @@ registerSite api token toMsg data =
                 (D.field "data" Input.siteDecoder)
     in
     securePost
-        (makeRequestUrl api "sites/register")
+        (makeAdminRequestUrl api "sites/register")
         token
         body
         expect
