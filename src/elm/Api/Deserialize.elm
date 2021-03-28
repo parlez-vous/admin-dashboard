@@ -9,7 +9,6 @@ module Api.Deserialize exposing
     , siteDecoder
     )
 
-import Iso8601
 import Json.Decode as D exposing (Decoder)
 import Time
 
@@ -51,8 +50,8 @@ adminDecoder =
     D.map4 Admin
         (D.field "id" D.string)
         (D.field "username" D.string)
-        (D.field "createdAt" Iso8601.decoder)
-        (D.field "updatedAt" Iso8601.decoder)
+        (D.field "createdAt" posixTimeDecoder)
+        (D.field "updatedAt" posixTimeDecoder)
 
 
 adminAndTokenDecoder : Decoder ( Admin, SessionToken )
@@ -62,10 +61,16 @@ adminAndTokenDecoder =
         (D.field "sessionToken" D.string)
 
 
+posixTimeDecoder : Decoder Time.Posix
+posixTimeDecoder =
+    D.int
+        |> D.map Time.millisToPosix
+
+
 siteDecoder : Decoder Site
 siteDecoder =
     D.map4 Site
         (D.field "id" D.string)
         (D.field "hostname" D.string)
-        (D.field "createdAt" Iso8601.decoder)
-        (D.field "updatedAt" Iso8601.decoder)
+        (D.field "createdAt" posixTimeDecoder)
+        (D.field "updatedAt" posixTimeDecoder)
