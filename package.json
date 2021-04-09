@@ -13,7 +13,7 @@
   "dependencies": {},
   "devDependencies": {
     "autoprefixer": "9.7.4",
-    "css-loader": "2.1.0",
+    "css-loader": "5.2.1",
     "elm": "^0.19.1-5",
     "elm-format": "^0.8.5",
     "elm-webpack-loader": "6.0.0",
