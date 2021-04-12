@@ -17,20 +17,20 @@
             "krisajenkins/remotedata": "6.0.1",
             "pablen/toasty": "1.2.0",
             "panthershark/email-parser": "1.0.2",
-            "supermacro/elm-antd": "6.1.0"
+            "supermacro/elm-antd": "7.2.0"
         },
         "indirect": {
             "avh4/elm-color": "1.0.0",
-            "elm/bytes": "1.0.7",
-            "elm/file": "1.0.1",
+            "elm/bytes": "1.0.8",
+            "elm/file": "1.0.5",
             "elm/parser": "1.1.0",
             "elm/random": "1.0.0",
             "elm/regex": "1.0.0",
             "elm/virtual-dom": "1.0.2",
-            "elm-community/list-extra": "8.2.4",
+            "elm-community/list-extra": "8.3.0",
             "fredcy/elm-parseint": "2.0.1",
             "noahzgordon/elm-color-extra": "1.0.2",
-            "rtfeldman/elm-css": "16.1.0",
+            "rtfeldman/elm-css": "16.1.1",
             "rtfeldman/elm-hex": "1.0.0"
         }
     },
