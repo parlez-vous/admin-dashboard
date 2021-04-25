@@ -103,9 +103,11 @@ withVnav state { navbar } tagger pageContent =
                     Dict.values sites
                         |> List.map
                             (\site ->
-                                Text.text site.hostname
-                                    |> Text.withType (Text.Link (Link.toHref <| Link.Site site.id) Text.Self)
-                                    |> Text.toHtml
+                                div []
+                                    [ Text.text site.hostname
+                                        |> Text.withType (Text.Link (Link.toHref <| Link.Site site.id) Text.Self)
+                                        |> Text.toHtml
+                                    ]
                             )
                         |> div []
 
