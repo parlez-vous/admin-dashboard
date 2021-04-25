@@ -43,6 +43,7 @@ type Msg
     = LogOut PrivateState
     | ToggleResponsiveNavbar
     | RegisterNewSite PrivateState
+    | GoToHome PrivateState
 
 
 init : NavState
@@ -63,6 +64,12 @@ update msg ({ navbar } as parentModel) =
                     }
               }
             , Cmd.none
+            , SharedState.NoUpdate
+            )
+
+        GoToHome state ->
+            ( parentModel
+            , Link.toHref Link.Home |> Nav.pushUrl state.navKey
             , SharedState.NoUpdate
             )
 
@@ -115,7 +122,9 @@ withVnav state { navbar } tagger pageContent =
                     loading
 
         navTopContents =
-            [ logo "40"
+            [ Html.button [ onClick (tagger <| GoToHome state) ]
+                [ logo "40"
+                ]
             , siteNav
             ]
 
