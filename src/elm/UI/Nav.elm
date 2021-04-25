@@ -16,7 +16,7 @@ import Ant.Button as Btn exposing (button)
 import Ant.Typography.Text as Text
 import Browser.Navigation as Nav
 import Dict
-import Html exposing (Html, div, header, nav, text)
+import Html exposing (Html, a, div, header, nav)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import RemoteData
@@ -42,6 +42,7 @@ type alias WithNavbar a =
 type Msg
     = LogOut PrivateState
     | ToggleResponsiveNavbar
+    | RegisterNewSite PrivateState
 
 
 init : NavState
@@ -62,6 +63,12 @@ update msg ({ navbar } as parentModel) =
                     }
               }
             , Cmd.none
+            , SharedState.NoUpdate
+            )
+
+        RegisterNewSite state ->
+            ( parentModel
+            , Link.toHref Link.RegisterSite |> Nav.pushUrl state.navKey
             , SharedState.NoUpdate
             )
 
@@ -113,6 +120,10 @@ withVnav state { navbar } tagger pageContent =
         navBottomContents =
             [ button "Log Out"
                 |> Btn.onClick (tagger <| LogOut state)
+                |> Btn.toHtml
+            , button
+                "New site"
+                |> Btn.onClick (tagger <| RegisterNewSite state)
                 |> Btn.toHtml
             ]
 
