@@ -11,6 +11,7 @@ import Ant.Form.View as FV
 import Api
 import Api.Deserialize as Input
 import Api.Output as Output
+import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Http
@@ -125,17 +126,13 @@ update state msg model =
         FormSubmitted result ->
             case result of
                 Ok site ->
-                    let
-                        _ =
-                            Debug.log "Site registered: " site
-                    in
-                    ( model, Cmd.none, NoUpdate )
+                    ( model
+                    , UI.Link.toHref (UI.Link.Site site.id) |> Nav.pushUrl state.navKey
+                    , SharedState.InsertSite site
+                    )
 
                 Err e ->
                     let
-                        _ =
-                            Debug.log "Failed to register site: " e
-
                         ( newModel, cmd ) =
                             case e of
                                 Http.BadStatus statusCode ->

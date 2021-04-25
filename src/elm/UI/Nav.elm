@@ -16,7 +16,7 @@ import Ant.Button as Btn exposing (button)
 import Ant.Typography.Text as Text
 import Browser.Navigation as Nav
 import Dict
-import Html exposing (Html, div, header, nav, text)
+import Html exposing (Html, a, div, header, nav)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import RemoteData
@@ -42,6 +42,8 @@ type alias WithNavbar a =
 type Msg
     = LogOut PrivateState
     | ToggleResponsiveNavbar
+    | RegisterNewSite PrivateState
+    | GoToHome PrivateState
 
 
 init : NavState
@@ -62,6 +64,18 @@ update msg ({ navbar } as parentModel) =
                     }
               }
             , Cmd.none
+            , SharedState.NoUpdate
+            )
+
+        GoToHome state ->
+            ( parentModel
+            , Link.toHref Link.Home |> Nav.pushUrl state.navKey
+            , SharedState.NoUpdate
+            )
+
+        RegisterNewSite state ->
+            ( parentModel
+            , Link.toHref Link.RegisterSite |> Nav.pushUrl state.navKey
             , SharedState.NoUpdate
             )
 
@@ -96,9 +110,11 @@ withVnav state { navbar } tagger pageContent =
                     Dict.values sites
                         |> List.map
                             (\site ->
-                                Text.text site.hostname
-                                    |> Text.withType (Text.Link (Link.toHref <| Link.Site site.id) Text.Self)
-                                    |> Text.toHtml
+                                div []
+                                    [ Text.text site.hostname
+                                        |> Text.withType (Text.Link (Link.toHref <| Link.Site site.id) Text.Self)
+                                        |> Text.toHtml
+                                    ]
                             )
                         |> div []
 
@@ -106,13 +122,19 @@ withVnav state { navbar } tagger pageContent =
                     loading
 
         navTopContents =
-            [ logo "40"
+            [ Html.button [ onClick (tagger <| GoToHome state) ]
+                [ logo "40"
+                ]
             , siteNav
             ]
 
         navBottomContents =
             [ button "Log Out"
                 |> Btn.onClick (tagger <| LogOut state)
+                |> Btn.toHtml
+            , button
+                "New site"
+                |> Btn.onClick (tagger <| RegisterNewSite state)
                 |> Btn.toHtml
             ]
 
