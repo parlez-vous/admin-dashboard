@@ -95,6 +95,16 @@ transitionTrigger route state =
         ( Home _, Private { navKey } ) ->
             Nav.pushUrl navKey "/dash"
 
+        ( Site { siteId }, Private { admin, api } ) ->
+            let
+                { getSiteComments } =
+                    Api.getApiClient api
+
+                ( _, token ) =
+                    admin
+            in
+            getSiteComments token siteId (\x -> SiteMsg (Site.LoadComments x))
+
         ( _, Private { admin, api, sites } ) ->
             let
                 ( _, token ) =
