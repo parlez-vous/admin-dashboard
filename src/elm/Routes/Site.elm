@@ -13,6 +13,7 @@ import Html exposing (..)
 import Html.Attributes exposing (class)
 import RemoteData exposing (WebData)
 import SharedState exposing (PrivateState, SharedStateUpdate(..))
+import UI.Card exposing (card)
 import UI.Nav as ResponsiveNav exposing (withVnav)
 
 
@@ -106,6 +107,6 @@ commentsView commentsData =
 
 commentView : Comment -> Html msg
 commentView comment =
-    div []
+    card
         [ text comment.body
         ]
