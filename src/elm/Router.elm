@@ -95,15 +95,23 @@ transitionTrigger route state =
         ( Home _, Private { navKey } ) ->
             Nav.pushUrl navKey "/dash"
 
-        ( Site { siteId }, Private { admin, api } ) ->
+        ( Site { siteId }, Private { admin, api, sites } ) ->
             let
-                { getSiteComments } =
+                { getSiteComments, getManySites } =
                     Api.getApiClient api
 
                 ( _, token ) =
                     admin
             in
-            getSiteComments token siteId (\x -> SiteMsg (Site.LoadComments x))
+            Cmd.batch
+                [ case sites of
+                    RemoteData.NotAsked ->
+                        getManySites token SitesResponse
+
+                    _ ->
+                        Cmd.none
+                , getSiteComments token siteId (\x -> SiteMsg (Site.LoadComments x))
+                ]
 
         ( _, Private { admin, api, sites } ) ->
             let
