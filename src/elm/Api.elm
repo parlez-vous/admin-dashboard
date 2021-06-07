@@ -3,6 +3,7 @@ module Api exposing
     , ApiClient
     , apiFactory
     , getApiClient
+    , getSiteComments
     , makeCommonRequestUrl
     )
 
@@ -26,6 +27,7 @@ type alias ApiClient msg =
     , getAdminSession : GetAdminSession msg
     , getManySites : GetManySites msg
     , getSite : GetSite msg
+    , getSiteComments : GetSiteComments msg
     , registerSite : RegisterSite msg
     }
 
@@ -59,6 +61,7 @@ getApiClient api =
     , getAdminSession = getAdminSession api
     , getManySites = getSites api
     , getSite = getSingleSite api
+    , getSiteComments = getSiteComments api
     , registerSite = registerSite api
     }
 
@@ -173,6 +176,24 @@ secureGet endpoint token expect =
         }
 
 
+getSiteComments : Api -> GetSiteComments msg
+getSiteComments api token siteId toMsg =
+    let
+        commentsDecoder =
+            D.field "data" Input.commentsDecoder
+
+        expect =
+            Http.expectJson (RemoteData.fromResult >> toMsg) commentsDecoder
+
+        commentsUrl =
+            "sites/" ++ siteId ++ "/comments"
+    in
+    secureGet
+        (makeAdminRequestUrl api commentsUrl)
+        token
+        expect
+
+
 
 -- Api Requests
 
@@ -272,6 +293,10 @@ getSites api token toMsg =
 
 type alias GetSite msg =
     Input.SessionToken -> String -> (RemoteData.WebData Input.Site -> msg) -> Cmd msg
+
+
+type alias GetSiteComments msg =
+    Input.SessionToken -> String -> (RemoteData.WebData Input.Comments -> msg) -> Cmd msg
 
 
 getSingleSite : Api -> GetSite msg

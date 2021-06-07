@@ -1,11 +1,15 @@
 module Api.Deserialize exposing
     ( Admin
     , AdminWithToken
+    , Author(..)
+    , Comment
+    , Comments
     , SessionToken
     , Site
     , Sites
     , adminAndTokenDecoder
     , adminDecoder
+    , commentsDecoder
     , siteDecoder
     )
 
@@ -27,6 +31,29 @@ type alias Admin =
     , created : Time.Posix
     , updated : Time.Posix
     }
+
+
+type Author
+    = Anonymous String
+    | Known String
+
+
+type alias Post =
+    { id : String
+    }
+
+
+type alias Comment =
+    { id : String
+    , body : String
+    , author : Author
+    , post : Post
+    , createdAt : Time.Posix
+    }
+
+
+type alias Comments =
+    List Comment
 
 
 type alias Site =
@@ -74,3 +101,23 @@ siteDecoder =
         (D.field "hostname" D.string)
         (D.field "createdAt" posixTimeDecoder)
         (D.field "updatedAt" posixTimeDecoder)
+
+
+commentsDecoder : Decoder Comments
+commentsDecoder =
+    D.map4
+        (\id anonAuthorName body createdAt ->
+            { id = id
+            , body = body
+            , author = Anonymous anonAuthorName
+            , createdAt = createdAt
+            , post =
+                { id = ""
+                }
+            }
+        )
+        (D.field "id" D.string)
+        (D.field "anonAuthorName" D.string)
+        (D.field "body" D.string)
+        (D.field "createdAt" posixTimeDecoder)
+        |> D.list

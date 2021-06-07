@@ -14,6 +14,8 @@
             "elm/svg": "1.0.1",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
+            "justinmimbs/date": "3.2.1",
+            "justinmimbs/time-extra": "1.1.0",
             "krisajenkins/remotedata": "6.0.1",
             "pablen/toasty": "1.2.0",
             "panthershark/email-parser": "1.0.2",

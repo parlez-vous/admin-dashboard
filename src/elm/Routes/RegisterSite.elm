@@ -173,8 +173,8 @@ type alias Title =
     String
 
 
-view : PrivateState -> Model -> ( Title, Html Msg )
-view state model =
+view : ( a, PrivateState ) -> Model -> ( Title, Html Msg )
+view ( _, state ) model =
     let
         viewWithNav =
             withVnav state model ResponsiveNavMsg
