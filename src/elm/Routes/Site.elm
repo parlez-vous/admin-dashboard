@@ -123,7 +123,11 @@ ifEmpty arg1 arg2 =
 
 timeFormat : Time.Zone -> Time.Posix -> String
 timeFormat zone time =
-    time |> Date.fromPosix zone |> Date.format "MMM dd, yyyy"
+    (time |> Time.toHour zone |> String.fromInt |> String.padLeft 2 '0')
+        ++ ":"
+        ++ (time |> Time.toMinute zone |> String.fromInt |> String.padLeft 2 '0')
+        ++ ", "
+        ++ (time |> Date.fromPosix zone |> Date.format "MMM dd, yyyy")
 
 
 authorName : Author -> String
