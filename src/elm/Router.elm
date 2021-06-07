@@ -17,6 +17,7 @@ import Routes.Home as Home
 import Routes.RegisterSite as RegisterSite
 import Routes.Site as Site
 import SharedState exposing (PrivateState, SharedState(..), SharedStateUpdate)
+import Time
 import UI.Toast as Toast
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser, oneOf, string)
@@ -255,12 +256,12 @@ type alias AppView =
 
 
 viewPrivatePage :
-    SharedState
-    -> (PrivateState -> m -> ( Title, Html msg ))
+    ( a, SharedState )
+    -> (( a, PrivateState ) -> m -> ( Title, Html msg ))
     -> m
     -> (msg -> Msg)
     -> ( Title, Html Msg )
-viewPrivatePage sharedState routeView model tagger =
+viewPrivatePage ( generalData, sharedState ) routeView model tagger =
     let
         redirectPage =
             ( "Redirecting ..."
@@ -272,18 +273,18 @@ viewPrivatePage sharedState routeView model tagger =
             redirectPage
 
         Private privateState ->
-            routeView privateState model
+            routeView ( generalData, privateState ) model
                 |> Tuple.mapSecond (Html.map tagger)
 
 
-view : SharedState -> Model -> AppView
-view sharedState model =
+view : ( { a | timezone : Time.Zone }, SharedState ) -> Model -> AppView
+view ( generalData, sharedState ) model =
     let
         toastView =
             Toast.view ToastMsg model.toasts
 
         viewPrivateRoute =
-            viewPrivatePage sharedState
+            viewPrivatePage ( generalData, sharedState )
 
         ( title, html ) =
             case model.activeRoute of
